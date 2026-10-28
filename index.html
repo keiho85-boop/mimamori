@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://unpkg.com 'sha256-W3UCc/0tSLmMMsrz7uzX4HN2Ma+aHSR3C8Eeh+8Smbo='; style-src 'unsafe-inline'; img-src data: blob:; media-src blob: mediastream:; connect-src wss://0.peerjs.com https://0.peerjs.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://unpkg.com 'sha256-z97rHQhJCGsBvyz+5S9x61Ptr+GUDgO2f+ZvH13dsU4='; style-src 'unsafe-inline'; img-src data: blob:; media-src blob: mediastream:; connect-src wss://0.peerjs.com https://0.peerjs.com; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#2f7d6d">
@@ -66,12 +66,6 @@
   .code{font-family:ui-monospace,Menlo,monospace;font-size:20px;letter-spacing:1px;text-align:center;background:#f6f9f8;
     border:1px dashed var(--line);border-radius:10px;padding:10px;word-break:break-all;user-select:all;-webkit-user-select:all}
   .warnbox{background:#fff6e5;border:1px solid #f1d9a6;color:#7a5a12;border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.6;margin-bottom:12px}
-  .pinpad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
-  .pinpad button{font-size:24px;padding:16px 0;border-radius:14px;border:1px solid var(--line);background:#fff;cursor:pointer}
-  .pinpad button:active{background:var(--main2)}
-  .pindots{display:flex;justify-content:center;gap:12px;margin:10px 0}
-  .pindots span{width:14px;height:14px;border-radius:50%;border:2px solid var(--main)}
-  .pindots span.f{background:var(--main)}
 
   /* 通話画面 */
   #callView{position:fixed;inset:0;background:#000;z-index:10}
@@ -130,14 +124,14 @@
 
 <!-- ========== おうちの人：PIN設定 ========== -->
 <section id="pinSetView" class="wrap hidden">
-  <h1>🔒 ロック用の暗証番号</h1>
-  <p class="lead">このアプリを開くたびに入力する暗証番号（6〜12桁の数字）を決めてください。スマホを他の人が触っても、見守り画面を開けないようにするためのものです。</p>
+  <h1>🔒 ロック用のパスワード</h1>
+  <p class="lead">このアプリを開くたびに入力するパスワードを決めてください。スマホを他の人が触っても、見守り画面を開けないようにするためのものです。</p>
   <div class="card">
-    <label class="fld" for="inPin1">暗証番号</label>
-    <input id="inPin1" type="password" inputmode="numeric" autocomplete="new-password" maxlength="12">
-    <div class="hint">端末のロック解除と同じ番号や、誕生日などは避けてください。</div>
+    <label class="fld" for="inPin1">パスワード</label>
+    <input id="inPin1" type="password" autocomplete="new-password" autocapitalize="off" spellcheck="false" maxlength="64">
+    <div class="hint">英字・数字・記号を使う場合は8文字以上、数字だけの場合は6桁以上（最大64文字）。英字・数字・記号を混ぜるほど安全です。ほかのサービスと同じものや、誕生日などは避けてください。</div>
     <label class="fld" for="inPin2">もう一度入力</label>
-    <input id="inPin2" type="password" inputmode="numeric" autocomplete="new-password" maxlength="12">
+    <input id="inPin2" type="password" autocomplete="new-password" autocapitalize="off" spellcheck="false" maxlength="64">
     <div style="height:14px"></div>
     <p id="pinSetErr" class="err"></p>
     <button id="btnPinSet" class="btn">決定</button>
@@ -147,12 +141,15 @@
 
 <!-- ========== おうちの人：ロック解除 ========== -->
 <section id="lockView" class="wrap hidden">
-  <h1 style="text-align:center">🔒 暗証番号を入力</h1>
-  <div class="pindots" id="pinDots"></div>
-  <p id="lockErr" class="err" style="text-align:center"></p>
-  <div class="pinpad" id="pinPad"></div>
-  <p class="note" style="text-align:center;margin-top:18px">暗証番号を忘れた場合は、下のボタンで初期化して、こどもの端末も登録し直してください。</p>
-  <button id="btnForgot" class="link" style="display:block;margin:0 auto">暗証番号を忘れた（初期化する）</button>
+  <h1 style="text-align:center">🔒 パスワードを入力</h1>
+  <div class="card" style="margin-top:14px">
+    <input id="inUnlock" type="password" autocomplete="current-password" autocapitalize="off" spellcheck="false" maxlength="64" placeholder="パスワード">
+    <div style="height:12px"></div>
+    <p id="lockErr" class="err" style="text-align:center"></p>
+    <button id="btnUnlock" class="btn">ロックを解除</button>
+  </div>
+  <p class="note" style="text-align:center;margin-top:18px">パスワードを忘れた場合は、下のボタンで初期化して、こどもの端末も登録し直してください。</p>
+  <button id="btnForgot" class="link" style="display:block;margin:0 auto">パスワードを忘れた（初期化する）</button>
 </section>
 
 <!-- ========== おうちの人：ペアリング用QR ========== -->
@@ -291,7 +288,7 @@
   const PRESENCE_INTERVAL_MS = 20000;
   const MAX_CLOCK_SKEW_MS = 5 * 60 * 1000;
   const PBKDF2_ITER = 600000;
-  const PIN_MIN = 6, PIN_MAX = 12;
+  const PIN_MIN_DIGITS = 6, PIN_MIN_MIXED = 8, PIN_MAX = 64;
 
   const S = {
     role: null,            // 'parent' | 'kid'
@@ -378,7 +375,7 @@
     try { return await crypto.subtle.verify('HMAC', S.authKey, unb64(tag), enc.encode(text)); } catch (e) { return false; }
   }
 
-  // 暗証番号から暗号化鍵を作る（総当たり対策で計算を重くする）
+  // パスワードから暗号化鍵を作る（総当たり対策で計算を重くする）
   async function pinKey(pin, salt) {
     const base = await crypto.subtle.importKey('raw', enc.encode(pin), 'PBKDF2', false, ['deriveKey']);
     return crypto.subtle.deriveKey({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: PBKDF2_ITER },
@@ -495,8 +492,8 @@
     const p1 = $('inPin1').value, p2 = $('inPin2').value;
     const err = $('pinSetErr');
     err.textContent = '';
-    if (!/^\d+$/.test(p1) || p1.length < PIN_MIN || p1.length > PIN_MAX) { err.textContent = `暗証番号は${PIN_MIN}〜${PIN_MAX}桁の数字にしてください。`; return; }
-    if (/^(\d)\1+$/.test(p1) || '01234567890'.includes(p1) || '09876543210'.includes(p1)) { err.textContent = '同じ数字の連続や連番は使えません。'; return; }
+    const msg = checkPassword(p1);
+    if (msg) { err.textContent = msg; return; }
     if (p1 !== p2) { err.textContent = '2回の入力が一致しません。'; return; }
     $('btnPinSet').disabled = true; $('btnPinSet').textContent = '設定しています…';
     try {
@@ -514,63 +511,63 @@
     }
   });
 
-  let pinBuf = '';
-  function renderPinDots() {
-    const n = Math.max(PIN_MIN, pinBuf.length);
-    $('pinDots').innerHTML = '';
-    for (let i = 0; i < n; i++) {
-      const s = document.createElement('span');
-      if (i < pinBuf.length) s.className = 'f';
-      $('pinDots').appendChild(s);
-    }
+  // パスワードの強さを確認（問題なければ空文字を返す）
+  function checkPassword(pw) {
+    if (/\s/.test(pw)) return 'パスワードに空白は使えません。';
+    if (pw.length > PIN_MAX) return `パスワードは${PIN_MAX}文字以内にしてください。`;
+    const digitsOnly = /^\d+$/.test(pw);
+    if (digitsOnly && pw.length < PIN_MIN_DIGITS) return `数字だけの場合は${PIN_MIN_DIGITS}桁以上にしてください。`;
+    if (!digitsOnly && pw.length < PIN_MIN_MIXED) return `英字・記号を含む場合は${PIN_MIN_MIXED}文字以上にしてください。`;
+    if (/^(.)\1+$/.test(pw)) return '同じ文字の繰り返しは使えません。';
+    if (digitsOnly && ('01234567890123'.includes(pw) || '98765432109876'.includes(pw))) return '連番は使えません。';
+    if (['password', 'passw0rd', 'qwertyui', 'abcdefgh', 'mimamori'].includes(pw.toLowerCase())) return '推測されやすいパスワードは使えません。';
+    return '';
   }
-  (function buildPad() {
-    const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '⌫', '0', 'OK'];
-    keys.forEach(k => {
-      const b = document.createElement('button');
-      b.textContent = k;
-      b.addEventListener('click', () => onPinKey(k));
-      $('pinPad').appendChild(b);
-    });
-  })();
+
   function lockState() { return load(LOCK_KEY) || { fails: 0, until: 0 }; }
+  function waitText(ls) { return `しばらくお待ちください（${Math.ceil((ls.until - Date.now()) / 1000)}秒）`; }
   function openLock() {
-    pinBuf = ''; renderPinDots();
+    $('inUnlock').value = '';
     const ls = lockState();
-    $('lockErr').textContent = ls.until > Date.now() ? `しばらくお待ちください（${Math.ceil((ls.until - Date.now()) / 1000)}秒）` : '';
+    $('lockErr').textContent = ls.until > Date.now() ? waitText(ls) : '';
     show('lockView');
+    setTimeout(() => { try { $('inUnlock').focus(); } catch (e) {} }, 100);
   }
   let unlocking = false;
-  async function onPinKey(k) {
+  async function tryUnlock() {
     if (unlocking) return;
-    if (k === '⌫') { pinBuf = pinBuf.slice(0, -1); renderPinDots(); return; }
-    if (k !== 'OK') { if (pinBuf.length < PIN_MAX) pinBuf += k; renderPinDots(); return; }
+    const pw = $('inUnlock').value;
     const ls = lockState();
-    if (ls.until > Date.now()) { $('lockErr').textContent = `しばらくお待ちください（${Math.ceil((ls.until - Date.now()) / 1000)}秒）`; return; }
-    if (pinBuf.length < PIN_MIN) { $('lockErr').textContent = `${PIN_MIN}桁以上入力してください`; return; }
+    if (ls.until > Date.now()) { $('lockErr').textContent = waitText(ls); return; }
+    if (!pw) { $('lockErr').textContent = 'パスワードを入力してください'; return; }
     const st = load(STORE_KEY);
     if (!st || st.role !== 'parent') { show('welcomeView'); return; }
-    unlocking = true; $('lockErr').textContent = '確認しています…';
+    unlocking = true;
+    $('btnUnlock').disabled = true;
+    $('lockErr').textContent = '確認しています…';
     try {
-      const secret = await decryptSecret(st.enc, pinBuf);
+      const secret = await decryptSecret(st.enc, pw);
       remove(LOCK_KEY);
-      pinBuf = '';
+      $('inUnlock').value = '';
       $('lockErr').textContent = '';
-      unlocking = false;
       await unlockedParent(secret);
       enterHome();
     } catch (e) {
-      unlocking = false;
-      pinBuf = ''; renderPinDots();
+      $('inUnlock').value = '';
       ls.fails = (ls.fails || 0) + 1;
       // 失敗が続くほど待ち時間を長くする（5回目から 30秒→60秒→…最大1時間）
       if (ls.fails >= 5) ls.until = Date.now() + Math.min(3600, 30 * Math.pow(2, ls.fails - 5)) * 1000;
       save(LOCK_KEY, ls);
       $('lockErr').textContent = ls.fails >= 5
-        ? `暗証番号が違います。${Math.ceil((ls.until - Date.now()) / 1000)}秒後に再入力できます`
-        : '暗証番号が違います';
+        ? `パスワードが違います。${Math.ceil((ls.until - Date.now()) / 1000)}秒後に再入力できます`
+        : 'パスワードが違います';
+    } finally {
+      unlocking = false;
+      $('btnUnlock').disabled = false;
     }
   }
+  $('btnUnlock').addEventListener('click', tryUnlock);
+  $('inUnlock').addEventListener('keydown', (e) => { if (e.key === 'Enter') tryUnlock(); });
   $('btnForgot').addEventListener('click', async () => {
     const ok = await confirmDialog('この端末の設定をすべて消して、最初からやり直します。\nこどもの端末も登録し直しが必要です。よろしいですか？', '初期化する');
     if (!ok) return;
@@ -712,14 +709,14 @@
     if (ok) wipeAll();
   });
 
-  // 再設定の前に暗証番号を入力し直してもらう
+  // 再設定の前にパスワードを入力し直してもらう
   async function askPinAgain() {
     return new Promise((resolve) => {
       $('dlgMsg').textContent = '';
       const wrap = document.createElement('div');
-      wrap.innerHTML = '<div style="margin-bottom:8px">確認のため暗証番号を入力してください</div>';
+      wrap.innerHTML = '<div style="margin-bottom:8px">確認のためパスワードを入力してください</div>';
       const inp = document.createElement('input');
-      inp.type = 'password'; inp.inputMode = 'numeric'; inp.autocomplete = 'off';
+      inp.type = 'password'; inp.autocomplete = 'current-password'; inp.autocapitalize = 'off'; inp.maxLength = 64;
       wrap.appendChild(inp);
       $('dlgMsg').appendChild(wrap);
       $('dlgOk').textContent = '確認';
@@ -730,7 +727,7 @@
       $('dlgOk').onclick = async () => {
         const st = load(STORE_KEY);
         try { await decryptSecret(st.enc, inp.value); done(inp.value); }
-        catch (e) { toast('暗証番号が違います'); done(null); }
+        catch (e) { toast('パスワードが違います'); done(null); }
       };
     });
   }
