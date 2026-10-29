@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://unpkg.com 'sha256-paJaPNw4X3g2MIxd62JfWJI41G1HDP1MCLs++PQeNpg='; style-src 'unsafe-inline'; img-src 'self' data: blob:; manifest-src 'self'; media-src blob: mediastream:; connect-src wss://0.peerjs.com https://0.peerjs.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://unpkg.com 'sha256-YmcL0CuePrHvKROXEuoz4GsmnCvJJciZ27SyZo1t5UM='; style-src 'unsafe-inline'; img-src 'self' data: blob:; manifest-src 'self'; media-src blob: mediastream:; connect-src wss://0.peerjs.com https://0.peerjs.com https://ntfy.sh; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#2f7d6d">
@@ -170,6 +170,38 @@
   <button id="btnPairDone" class="btn">登録が終わった</button>
 </section>
 
+<!-- ========== おうちの人：通知の設定 ========== -->
+<section id="notifyView" class="wrap hidden">
+  <h1>🔔 通知の設定</h1>
+  <p class="lead">こどもが「おうちの人に電話」を押したとき、このアプリを閉じていても通知でお知らせします。無料の通知アプリ「<b>ntfy</b>」を使います。</p>
+  <div class="warnbox">⚠ 下の「通知の名前」は合鍵から作った秘密の名前です。家族以外に教えないでください。</div>
+  <div class="card">
+    <h2>通知の名前</h2>
+    <div class="code" id="ntfyTopic"></div>
+    <div style="height:10px"></div>
+    <button id="btnCopyTopic" class="btn sub">📋 コピーする</button>
+  </div>
+  <div class="card">
+    <h2>iPhone の場合</h2>
+    <p class="note">
+      1. App Store で「<b>ntfy</b>」をインストールして開きます。<br>
+      2. 右上の「＋」を押し、「Topic name」に上の名前を貼り付けて「Subscribe」を押します（サーバーは ntfy.sh のままでOK）。<br>
+      3. 通知の許可を聞かれたら「許可」を押します。<br>
+      4. こどもが電話を押すと、<b>10秒おきに最大6回</b>通知が届きます。通知をタップするとこのアプリが開き、そのままこどもの呼び出しにつながります。<br>
+      ※ 集中モードやおやすみモードの間は、ntfy を「許可するアプリ」に追加しておくと鳴ります。
+    </p>
+    <h2 style="margin-top:14px">Android の場合</h2>
+    <p class="note">
+      1. Google Play で「<b>ntfy</b>」をインストールして開きます。<br>
+      2. 「＋」から上の名前を入力して登録します。<br>
+      3. 登録した名前をタップ → 右上のメニュー →「通知の設定」で、<b>鳴り続ける通知（Insistent）</b>をオンにすると、止めるまで鳴り続けます。<br>
+      4. 優先度「最大（urgent）」の通知チャンネルの音量・バイブもオンにしてください。
+    </p>
+  </div>
+  <button id="btnTestNotify" class="btn sub">📨 テスト通知を送る</button>
+  <button id="btnNotifyBack" class="btn">もどる</button>
+</section>
+
 <!-- ========== こども：登録 ========== -->
 <section id="kidPairView" class="wrap hidden">
   <h1>🧒 こどもの端末として登録</h1>
@@ -200,6 +232,9 @@
 
   <!-- おうちの人用 -->
   <div id="parentPanel" class="hidden">
+    <div id="callbackBanner" class="warnbox hidden">📞 こどもから呼び出しがありました。<br>「ビデオ通話」で折り返せます。
+      <button id="btnCallback" class="btn" style="margin-top:10px">📹 いま折り返す</button>
+    </div>
     <button id="btnWatch" class="btn big">👀 見守る</button>
     <button id="btnCallKid" class="btn big sub">📹 ビデオ通話</button>
     <p class="note" style="margin-top:12px">
@@ -208,6 +243,7 @@
     </p>
     <div id="parentMenu" class="card hidden" style="margin-top:14px">
       <h2>設定</h2>
+      <button id="btnNotifySetup" class="btn sub">🔔 通知の設定（アプリを閉じていても知らせる）</button>
       <button id="btnShowPair" class="btn sub">📱 こどもの端末を登録（QRを表示）</button>
       <button id="btnRepair" class="btn sub">🔁 登録をやり直す（今の登録を無効化）</button>
       <button id="btnLockNow" class="btn sub">🔒 ロックする</button>
@@ -291,6 +327,11 @@
   const DIAL_TIMEOUT_MS = 45000;
   const AUTH_TIMEOUT_MS = 15000;
   const PRESENCE_INTERVAL_MS = 20000;
+  const NTFY_URL = 'https://ntfy.sh/';
+  const NOTIFY_INTERVAL_MS = 10000;   // 通知を送る間隔
+  const NOTIFY_MAX = 6;               // 1回の呼び出しで送る通知の最大数
+  const RING_SESSION_MS = 120000;     // こどもの呼び出しを続ける最大時間
+  const RING_PROBE_MS = 4000;         // おうちの人がアプリを開いたか確かめる間隔
   const MAX_CLOCK_SKEW_MS = 5 * 60 * 1000;
   const PBKDF2_ITER = 600000;
   const PIN_MIN_DIGITS = 6, PIN_MIN_MIXED = 8, PIN_MAX = 64;
@@ -313,6 +354,9 @@
     pendingIn: new Map(),  // nonce -> { call, auth }（確認待ちの着信）
     seenNonces: new Set(),
     authFails: [],
+    ntfyTopic: '',
+    ring: null,          // こどもの呼び出しセッション
+    callbackPending: false,
     facing: 'user',
     watchAllowed: true,
     presenceTimer: null, dialTimer: null, authTimer: null, iceTimer: null,
@@ -369,7 +413,9 @@
     const authKey = await crypto.subtle.deriveKey(
       { name: 'HKDF', hash: 'SHA-256', salt, info: enc.encode('call-auth') },
       base, { name: 'HMAC', hash: 'SHA-256', length: 256 }, false, ['sign', 'verify']);
-    return { kidId: ID_PREFIX + hex + '-k', parentId: ID_PREFIX + hex + '-p', authKey };
+    const topicBits = await crypto.subtle.deriveBits({ name: 'HKDF', hash: 'SHA-256', salt, info: enc.encode('ntfy-topic') }, base, 128);
+    const topic = 'mmr-' + Array.from(new Uint8Array(topicBits)).map(b => b.toString(16).padStart(2, '0')).join('');
+    return { kidId: ID_PREFIX + hex + '-k', parentId: ID_PREFIX + hex + '-p', authKey, topic };
   }
   async function sign(text) {
     const sig = await crypto.subtle.sign('HMAC', S.authKey, enc.encode(text));
@@ -424,7 +470,7 @@
   /* =========================================================
      表示
      ========================================================= */
-  const VIEWS = ['welcomeView', 'pinSetView', 'lockView', 'pairShowView', 'kidPairView', 'homeView'];
+  const VIEWS = ['welcomeView', 'pinSetView', 'lockView', 'pairShowView', 'kidPairView', 'notifyView', 'homeView'];
   function show(view) { VIEWS.forEach(v => $(v).classList.toggle('hidden', v !== view)); }
   let toastTimer = null;
   function toast(msg, ms = 3500) {
@@ -473,6 +519,8 @@
 
     // QRコードから開かれた場合（#pair-XXXX）
     const m = location.hash.match(/^#pair-([A-Za-z0-9-]+)$/);
+    // 通知から開かれた場合（#callback）
+    if (location.hash === '#callback') S.callbackPending = true;
     // 合鍵がアドレス履歴に残らないようにすぐ消す
     if (location.hash) history.replaceState(null, '', location.pathname + location.search);
 
@@ -583,7 +631,7 @@
     S.role = 'parent';
     S.secret = secret;
     const d = await deriveFromSecret(secret);
-    S.authKey = d.authKey; S.myId = d.parentId; S.otherId = d.kidId;
+    S.authKey = d.authKey; S.myId = d.parentId; S.otherId = d.kidId; S.ntfyTopic = d.topic;
   }
 
   function showPairing() {
@@ -652,7 +700,7 @@
     S.secret = secret;
     S.watchAllowed = st.watchAllowed !== false;
     const d = await deriveFromSecret(secret);
-    S.authKey = d.authKey; S.myId = d.kidId; S.otherId = d.parentId;
+    S.authKey = d.authKey; S.myId = d.kidId; S.otherId = d.parentId; S.ntfyTopic = d.topic;
     enterHome();
   }
 
@@ -668,6 +716,7 @@
     $('parentMenu').classList.add('hidden');
     $('kidMenu').classList.add('hidden');
     $('inWatchAllowed').checked = S.watchAllowed;
+    $('callbackBanner').classList.toggle('hidden', !(S.callbackPending && !isKid));
     setOther(null);
     show('homeView');
     requestWakeLock();
@@ -738,6 +787,7 @@
   }
 
   function shutdownPeer() {
+    stopRingSession();
     endCall();
     stopPresence();
     if (S.peer) { try { S.peer.destroy(); } catch (e) {} }
@@ -766,7 +816,106 @@
 
   $('btnWatch').addEventListener('click', () => { unlockAudio(); startCall('watch'); });
   $('btnCallKid').addEventListener('click', () => { unlockAudio(); startCall('call'); });
-  $('btnCallParent').addEventListener('click', () => { unlockAudio(); startCall('call'); });
+  $('btnCallParent').addEventListener('click', () => { unlockAudio(); startRingSession(); });
+  $('btnCallback').addEventListener('click', () => {
+    unlockAudio();
+    S.callbackPending = false;
+    $('callbackBanner').classList.add('hidden');
+    startCall('call');
+  });
+
+  /* =========================================================
+     通知（ntfy）
+     ========================================================= */
+  $('btnNotifySetup').addEventListener('click', () => {
+    if (!S.ntfyTopic) return;
+    $('ntfyTopic').textContent = S.ntfyTopic;
+    show('notifyView');
+  });
+  $('btnNotifyBack').addEventListener('click', () => { $('ntfyTopic').textContent = ''; enterHome(); });
+  $('btnCopyTopic').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(S.ntfyTopic); toast('コピーしました'); }
+    catch (e) { toast('コピーできませんでした。名前を長押ししてコピーしてください'); }
+  });
+  $('btnTestNotify').addEventListener('click', async () => {
+    const ok = await sendNtfy('みまもり：テスト通知', 'このように通知が届きます。タップするとアプリが開きます。', 3);
+    toast(ok ? 'テスト通知を送りました。届いたか確認してください' : '送れませんでした。電波を確認してください');
+  });
+
+  // 通知の文面には個人情報や合鍵を一切含めない
+  async function sendNtfy(title, message, priority = 5) {
+    if (!S.ntfyTopic) return false;
+    const body = JSON.stringify({
+      topic: S.ntfyTopic,
+      title, message, priority,
+      tags: ['telephone_receiver'],
+      click: location.origin + location.pathname + '#callback',
+    });
+    try {
+      // Content-Type を付けない（text/plain 扱い）ことで、余分な事前確認通信を発生させない
+      const res = await fetch(NTFY_URL, { method: 'POST', body, mode: 'cors', credentials: 'omit', referrerPolicy: 'no-referrer' });
+      return res.ok;
+    } catch (e) { return false; }
+  }
+
+  /* =========================================================
+     こどもからの呼び出し（通知を送りながら、おうちの人がアプリを開くのを待つ）
+     ========================================================= */
+  function startRingSession() {
+    if (S.ring || S.call || S.incoming) return;
+    S.ring = { started: Date.now(), sent: 0, probing: false, notifyTimer: null, tryTimer: null };
+    showRingDialing();
+    startRing('back');
+    ringNotify();
+    S.ring.notifyTimer = setInterval(ringNotify, NOTIFY_INTERVAL_MS);
+    S.ring.tryTimer = setInterval(ringTick, RING_PROBE_MS);
+    ringTick();
+  }
+  function showRingDialing() {
+    $('dlTitle').textContent = 'おうちの人を呼び出しています…';
+    $('dlSub').textContent = 'アプリを閉じていても、通知でお知らせしています';
+    $('dialingView').classList.remove('hidden');
+  }
+  async function ringNotify() {
+    const r = S.ring;
+    if (!r || r.sent >= NOTIFY_MAX) return;
+    r.sent++;
+    await sendNtfy('📞 みまもり：こどもから呼び出し', 'タップしてアプリを開いてください（' + r.sent + '回目）', 5);
+  }
+  async function ringTick() {
+    const r = S.ring;
+    if (!r) return;
+    if (Date.now() - r.started > RING_SESSION_MS) {
+      stopRingSession();
+      endCall('おうちの人は出られませんでした（通知は送ってあります）', true);
+      return;
+    }
+    if (S.call || r.probing || !S.peer || !S.peer.open) return;
+    r.probing = true;
+    const online = await probeOther(3500);
+    if (S.ring !== r) return;
+    r.probing = false;
+    if (online && !S.call) startCall('call');
+  }
+  function stopRingSession() {
+    const r = S.ring;
+    if (!r) return;
+    clearInterval(r.notifyTimer);
+    clearInterval(r.tryTimer);
+    S.ring = null;
+  }
+  // 相手がオンラインかを短時間で確かめる
+  function probeOther(timeoutMs) {
+    return new Promise((resolve) => {
+      let done = false, conn;
+      const fin = (v) => { if (done) return; done = true; try { conn && conn.close(); } catch (e) {} resolve(v); };
+      try { conn = S.peer.connect(S.otherId, { reliable: true }); } catch (e) { return resolve(false); }
+      if (!conn) return resolve(false);
+      conn.on('open', () => { setOther(true); fin(true); });
+      conn.on('error', () => fin(false));
+      setTimeout(() => fin(false), timeoutMs);
+    });
+  }
 
   // おうちの人の端末は、裏に回って5分たったら自動でロック
   let hiddenAt = 0;
@@ -1016,9 +1165,10 @@
     sendSignal({ sig: 'auth-offer', n, ts, type, fp, tag });
   }
 
-  $('btnCancelDial').addEventListener('click', () => endCall('', true));
+  $('btnCancelDial').addEventListener('click', () => { stopRingSession(); endCall('', true); });
 
   function onVerified() {
+    stopRingSession();
     S.verified = true;
     clearTimeout(S.dialTimer);
     clearTimeout(S.authTimer);
@@ -1132,6 +1282,9 @@
     S.call = call; S.callType = type; S.callNonce = n; S.callOfferFp = offerFp;
     S.wantMic = true; S.wantVideo = true;
     S.verified = true; // 応答側は発信者の署名と指紋を確認済み
+    stopRingSession();
+    S.callbackPending = false;
+    $('callbackBanner').classList.add('hidden');
     S.pendingRemote = null;
     call.answer(S.localStream);
     wireCall(call);
@@ -1290,10 +1443,16 @@
     stopLocal();
     $('remoteVideo').srcObject = null;
     $('callView').classList.add('hidden');
-    $('dialingView').classList.add('hidden');
     $('tapAudio').classList.add('hidden');
-    if (S.role && S.authKey && $('lockView').classList.contains('hidden')) $('homeView').classList.remove('hidden');
     S.facing = 'user';
+    if (S.ring) {
+      // 呼び出し中は画面を出したまま、おうちの人がアプリを開くのを待ち続ける
+      showRingDialing();
+      startRing('back');
+      return;
+    }
+    $('dialingView').classList.add('hidden');
+    if (S.role && S.authKey && $('lockView').classList.contains('hidden')) $('homeView').classList.remove('hidden');
     if (msg) toast(msg);
     if (S.peer && !S.peer.destroyed) startPresence();
   }
