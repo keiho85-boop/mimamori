@@ -2,9 +2,9 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://unpkg.com 'sha256-5TlMl6hh+kbx8t25ydQK7KzhFvxUcwWxR3GSML2W+Ic='; style-src 'unsafe-inline'; img-src 'self' data: blob:; manifest-src 'self'; media-src blob: mediastream:; connect-src wss://0.peerjs.com https://0.peerjs.com https://ntfy.sh; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://unpkg.com 'sha256-1p+4h8EsxD+TA+B4jok9EO7tPXAVzsHH0Qd1ujUGpWE='; style-src 'unsafe-inline'; img-src 'self' data: blob:; manifest-src 'self'; media-src blob: mediastream:; connect-src wss://0.peerjs.com https://0.peerjs.com https://ntfy.sh; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta id="vp" name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#2f7d6d">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon-192.png">
@@ -123,6 +123,34 @@
   .callbtn .mini{display:flex;align-items:center}
   .callbtn .dot{width:14px;height:14px;background:#ffffff66}
   .callbtn .dot.on{background:#7dffb0;box-shadow:0 0 0 4px #ffffff33}
+  /* QRコード読み取り */
+  #scanView{position:fixed;inset:0;z-index:35;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  #scanVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  #scanFrame{position:relative;width:min(70vw,300px);aspect-ratio:1;border:4px solid #ffffffcc;border-radius:20px;box-shadow:0 0 0 2000px #0007}
+  #scanText{position:relative;color:#fff;font-size:16px;font-weight:700;margin-top:22px;text-align:center;padding:0 20px;line-height:1.6}
+  #btnScanCancel{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(30px + env(safe-area-inset-bottom));width:auto;padding:14px 30px}
+
+  /* こどもの画面（全画面・ボタン以外は反応しない） */
+  html.kidmode,html.kidmode body{overflow:hidden;overscroll-behavior:none;touch-action:none;
+    -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;height:100%}
+  html.kidmode button,html.kidmode input,html.kidmode label{touch-action:manipulation}
+  #kidView{position:fixed;inset:0;z-index:5;background:linear-gradient(160deg,#eaf6f2,#d3ebe3);display:flex;flex-direction:column;
+    padding:calc(14px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left))}
+  .kidtop{display:flex;align-items:center;gap:8px;color:var(--sub);font-size:14px}
+  .kidtop .sp{flex:1}
+  #kidGear{width:44px;height:44px;border:none;background:transparent;font-size:20px;opacity:.35;border-radius:50%}
+  .kidbtns{flex:1;display:flex;flex-direction:column;justify-content:center;gap:20px;width:100%;max-width:560px;margin:0 auto}
+  .kidbtn{position:relative;display:flex;align-items:center;gap:18px;width:100%;border:none;border-radius:28px;cursor:pointer;
+    background:var(--main);color:#fff;padding:26px 24px;box-shadow:0 8px 0 #1d5a4e;text-align:left}
+  .kidbtn:active{transform:translateY(6px);box-shadow:0 2px 0 #1d5a4e}
+  .kidbtn .kb-ic{font-size:54px;line-height:1}
+  .kidbtn .kb-nm{font-size:34px;font-weight:800;display:block}
+  .kidbtn .kb-sub{font-size:18px;opacity:.9;display:block;margin-top:2px}
+  .kidbtn .dot{position:absolute;right:20px;top:20px;width:16px;height:16px;background:#ffffff55}
+  .kidbtn .dot.on{background:#7dffb0;box-shadow:0 0 0 4px #ffffff33}
+  .kidempty{text-align:center;color:var(--sub);font-size:18px;line-height:1.8}
+  #kidSettings{position:fixed;inset:0;z-index:30;background:#0007;display:flex;align-items:center;justify-content:center;padding:20px}
+  #kidSettings .box{background:#fff;border-radius:18px;padding:20px;width:100%;max-width:420px}
 </style>
 </head>
 <body>
@@ -138,7 +166,8 @@
   </div>
   <div class="card">
     <h2>家族に追加してもらう</h2>
-    <p class="note">すでに設定済みのおうちの人の端末で「端末を追加」を開き、表示されたQRコードをこの端末のカメラで読み取ってください。読み取れない場合は、下のボタンから登録コードを入力できます。</p>
+    <p class="note">すでに設定済みのおうちの人の端末で「端末を追加」を開き、表示されたQRコードを下のボタンで読み取ってください。すぐに登録されます。</p>
+    <button id="btnScanQR" class="btn">📷 QRコードを読み取って登録</button>
     <button id="btnJoinByCode" class="btn sub">⌨ 登録コードを入力する</button>
   </div>
   <p class="note">※ 映像と音声は端末どうしで暗号化して直接やりとりし、どこにも保存されません。</p>
@@ -235,7 +264,7 @@
     <div class="warnbox">⚠ このQRコードと登録コードは「招待状」です。追加する端末以外に見せたり、写真に撮って送ったりしないでください。<b>1回だけ・10分間</b>有効です。</div>
     <div class="card">
       <p class="note" id="addTarget"></p>
-      <p class="note">追加する端末の<b>カメラアプリ</b>でQRコードを読み取り、表示されたリンクを開いてください（iPhone/iPadはSafari、AndroidはChromeで開きます）。<br>この画面は、登録が終わるまで開いたままにしてください。</p>
+      <p class="note">追加する端末でこのアプリを開き、「<b>📷 QRコードを読み取って登録</b>」でこのQRコードを読み取ってください（端末のカメラアプリで読み取って、表示されたリンクを開いても登録できます）。<br>この画面は、登録が終わるまで開いたままにしてください。</p>
       <div class="qr"><img id="qrImg" alt="登録用QRコード"></div>
       <p class="note">読み取れない場合の登録コード：</p>
       <div class="code" id="inviteCode"></div>
@@ -309,21 +338,41 @@
     </div>
   </div>
 
-  <!-- こども用 -->
-  <div id="kidPanel" class="hidden">
-    <div id="parentList"></div>
-    <div class="card" style="margin-top:14px">
+</section>
+
+<!-- ========== こどもの画面 ========== -->
+<section id="kidView" class="hidden">
+  <div class="kidtop">
+    <span id="kidSelfDot" class="dot wait"></span><span id="kidName"></span>
+    <span class="sp"></span>
+    <button id="kidGear" aria-label="設定（3秒長押し）">⚙</button>
+  </div>
+  <div id="kidButtons" class="kidbtns"></div>
+</section>
+
+<!-- ========== こどもの設定（⚙を3秒長押し） ========== -->
+<div id="kidSettings" class="hidden">
+  <div class="box">
+    <h2>設定</h2>
+    <div class="card" style="margin-bottom:12px">
       <div class="switch">
-        <div><div class="t">見守りモード</div><div class="d">オンのとき、おうちの人の「見守る」で自動的につながります。</div></div>
+        <div><div class="t">見守りモード</div><div class="d">オンのとき、おうちの人の「見守る」で自動的につながります。オフのときは呼び出し音が鳴ります。</div></div>
         <label class="tg"><input id="inWatchAllowed" type="checkbox"><span></span></label>
       </div>
     </div>
-    <p class="note">この画面を開いたままにしてください（ほかのアプリに切り替えたり、画面を閉じるとつながりません）。充電しながらの利用がおすすめです。</p>
-    <div id="kidMenu" class="card hidden" style="margin-top:14px">
-      <h2>設定</h2>
-      <button id="btnKidUnpair" class="btn danger">この端末の登録を解除する</button>
-    </div>
+    <button id="btnKidFull" class="btn sub">⛶ 全画面にする</button>
+    <button id="btnKidUnpair" class="btn danger">この端末の登録を解除する</button>
+    <button id="btnKidSettingsClose" class="btn">とじる</button>
+    <p class="note" style="margin-top:12px">※ iPhoneでは全画面にできないため、「アクセスガイド」で画面を固定してください。</p>
   </div>
+</div>
+
+<!-- ========== QRコード読み取り ========== -->
+<section id="scanView" class="hidden">
+  <video id="scanVideo" autoplay playsinline muted></video>
+  <div id="scanFrame"></div>
+  <div id="scanText">おうちの人の端末に表示されている<br>QRコードを枠に合わせてください</div>
+  <button id="btnScanCancel" class="btn sub">やめる</button>
 </section>
 
 <!-- ========== 通話中 ========== -->
@@ -395,6 +444,8 @@
   const NOTIFY_MAX = 6;               // 1回の呼び出しで送る通知の最大数
   const RING_SESSION_MS = 120000;     // こどもの呼び出しを続ける最大時間
   const RING_PROBE_MS = 4000;         // おうちの人がアプリを開いたか確かめる間隔
+  const JSQR_URL = 'https://unpkg.com/jsqr@1.4.0/dist/jsQR.js';
+  const JSQR_SRI = 'sha384-b5Ya4Bq3qCyz39m2ISh+4DxjAIljdeFwK/BsXLuj9gugaNwAcj/ia15fxNZL9Nlx';
   const ECDSA = { name: 'ECDSA', namedCurve: 'P-256' };
   const ECDSA_SIGN = { name: 'ECDSA', hash: 'SHA-256' };
 
@@ -609,7 +660,7 @@
     if (!devById(S.deviceId)) { selfRevoked(); return; }
     const me = devById(S.deviceId);
     S.name = me.name;
-    if (!$('homeView').classList.contains('hidden')) renderHome();
+    if (!$('homeView').classList.contains('hidden') || !$('kidView').classList.contains('hidden')) renderHome();
     if (!$('devicesView').classList.contains('hidden')) renderDevices();
   }
   async function acceptRoster(r) {
@@ -630,6 +681,8 @@
     for (const d of otherDevices()) sendMsg(d.id, { t: 'roster', r: S.roster });
   }
   function selfRevoked() {
+    document.documentElement.classList.remove('kidmode');
+    $('kidSettings').classList.add('hidden');
     shutdownPeer();
     remove(STORE_KEY); remove(LOCK_KEY);
     S.store = null; S.priv = null; S.roster = null; S.rb = null; S.role = null;
@@ -640,7 +693,7 @@
   /* =========================================================
      表示
      ========================================================= */
-  const VIEWS = ['welcomeView', 'pinSetView', 'lockView', 'joinCodeView', 'joiningView', 'devicesView', 'addDeviceView', 'notifyView', 'homeView'];
+  const VIEWS = ['welcomeView', 'pinSetView', 'lockView', 'joinCodeView', 'joiningView', 'devicesView', 'addDeviceView', 'notifyView', 'homeView', 'kidView'];
   function show(view) { VIEWS.forEach(v => $(v).classList.toggle('hidden', v !== view)); }
   let toastTimer = null;
   function toast(msg, ms = 3500) {
@@ -665,7 +718,9 @@
     });
   }
   function setSelf(state, text) {
-    $('selfDot').className = 'dot ' + (state === 'on' ? 'on' : state === 'wait' ? 'wait' : '');
+    const cls = 'dot ' + (state === 'on' ? 'on' : state === 'wait' ? 'wait' : '');
+    $('selfDot').className = cls;
+    $('kidSelfDot').className = cls;
     $('selfStatus').textContent = text;
   }
   function setOnline(devId, v) {
@@ -891,7 +946,7 @@
     return { role: m[1] === 'P' ? 'parent' : 'kid', token, familyId: m[3], inviter: m[4] };
   }
 
-  async function startJoinFromCode(code) {
+  async function startJoinFromCode(code, fromScan) {
     const j = parseJoinCode(code);
     if (!j) { toast('登録用のリンクが正しくありません'); routeAfterCancel(); return; }
     if (S.store) {
@@ -899,7 +954,7 @@
       if (!ok) { routeAfterCancel(); return; }
       shutdownPeer();
       remove(STORE_KEY); remove(LOCK_KEY); S.store = null;
-    } else {
+    } else if (!fromScan) {
       const ok = await confirmDialog(`この端末を「${j.role === 'parent' ? 'おうちの人' : 'こども'}の端末」として家族に登録しますか？\n（家族のQRコードから開いた場合のみ「登録する」を押してください）`, '登録する');
       if (!ok) { show('welcomeView'); return; }
     }
@@ -984,6 +1039,89 @@
         });
       });
     } catch (e) { fail('登録できませんでした。もう一度お試しください。'); }
+  }
+
+  /* =========================================================
+     アプリ内でQRコードを読み取る
+     ========================================================= */
+  let scanStream = null, scanTimer = null, scanDetector = null, scanBusy = false;
+  const scanCanvas = document.createElement('canvas');
+  $('btnScanQR').addEventListener('click', () => openScanner());
+  $('btnScanCancel').addEventListener('click', () => closeScanner());
+
+  function loadJsQR() {
+    if (window.jsQR) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const sc = document.createElement('script');
+      sc.src = JSQR_URL; sc.integrity = JSQR_SRI; sc.crossOrigin = 'anonymous';
+      sc.onload = () => resolve(); sc.onerror = () => reject(new Error('jsqr'));
+      document.head.appendChild(sc);
+    });
+  }
+  async function openScanner() {
+    try {
+      scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+    } catch (e) {
+      toast('カメラを使えませんでした。カメラの使用を許可してください', 5000);
+      return;
+    }
+    const v = $('scanVideo');
+    $('scanText').innerHTML = '';
+    $('scanText').append('おうちの人の端末に表示されている', document.createElement('br'), 'QRコードを枠に合わせてください');
+    v.srcObject = scanStream;
+    try { await v.play(); } catch (e) {}
+    $('scanView').classList.remove('hidden');
+    scanDetector = null;
+    try {
+      if ('BarcodeDetector' in window) {
+        const f = await window.BarcodeDetector.getSupportedFormats();
+        if (f.includes('qr_code')) scanDetector = new window.BarcodeDetector({ formats: ['qr_code'] });
+      }
+    } catch (e) { scanDetector = null; }
+    if (!scanDetector) {
+      try { await loadJsQR(); } catch (e) { closeScanner(); toast('読み取りの部品を読み込めませんでした。「登録コードを入力する」をお使いください', 6000); return; }
+    }
+    clearInterval(scanTimer);
+    scanTimer = setInterval(scanFrame, 200);
+  }
+  function closeScanner() {
+    clearInterval(scanTimer); scanTimer = null;
+    if (scanStream) scanStream.getTracks().forEach(t => t.stop());
+    scanStream = null;
+    $('scanVideo').srcObject = null;
+    $('scanView').classList.add('hidden');
+  }
+  async function scanFrame() {
+    const v = $('scanVideo');
+    if (scanBusy || !scanStream || v.readyState < 2 || !v.videoWidth) return;
+    scanBusy = true;
+    try {
+      let text = null;
+      if (scanDetector) {
+        const codes = await scanDetector.detect(v);
+        if (codes && codes.length) text = codes[0].rawValue;
+      } else if (window.jsQR) {
+        const scale = Math.min(1, 640 / Math.max(v.videoWidth, v.videoHeight));
+        const w = Math.round(v.videoWidth * scale), h = Math.round(v.videoHeight * scale);
+        scanCanvas.width = w; scanCanvas.height = h;
+        const ctx = scanCanvas.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(v, 0, 0, w, h);
+        const img = ctx.getImageData(0, 0, w, h);
+        const r = window.jsQR(img.data, w, h, { inversionAttempts: 'dontInvert' });
+        if (r) text = r.data;
+      }
+      if (text) onScanned(text);
+    } catch (e) {}
+    scanBusy = false;
+  }
+  function onScanned(text) {
+    let code = text.trim();
+    const m = code.match(/#join-(.+)$/);
+    if (m) { try { code = decodeURIComponent(m[1]); } catch (e) { code = m[1]; } }
+    if (!parseJoinCode(code)) { $('scanText').textContent = 'このQRコードは家族の登録用ではありません'; return; }
+    closeScanner();
+    if (navigator.vibrate) { try { navigator.vibrate(80); } catch (e) {} }
+    startJoinFromCode(code, true);
   }
 
   /* =========================================================
@@ -1152,18 +1290,21 @@
   /* =========================================================
      待受画面
      ========================================================= */
+  function homeId() { return S.role === 'kid' ? 'kidView' : 'homeView'; }
   function enterHome() {
     const isKid = S.role === 'kid';
-    $('roleIcon').textContent = isKid ? '🧒' : '🧑';
+    $('roleIcon').textContent = '🧑';
     $('myNameLabel').textContent = S.name;
-    $('roleLabel').textContent = isKid ? 'こどもの端末' : 'おうちの人の端末';
+    $('roleLabel').textContent = 'おうちの人の端末';
     $('parentPanel').classList.toggle('hidden', isKid);
-    $('kidPanel').classList.toggle('hidden', !isKid);
     $('parentMenu').classList.add('hidden');
-    $('kidMenu').classList.add('hidden');
+    $('kidSettings').classList.add('hidden');
     $('inWatchAllowed').checked = S.watchAllowed;
+    document.documentElement.classList.toggle('kidmode', isKid);
+    // こどもの画面だけ拡大・縮小を止める
+    $('vp').setAttribute('content', 'width=device-width, initial-scale=1, viewport-fit=cover' + (isKid ? ', maximum-scale=1, user-scalable=no' : ''));
     renderHome();
-    show('homeView');
+    show(homeId());
     requestWakeLock();
     if (!S.peer || S.peer.destroyed) startPeer();
   }
@@ -1195,35 +1336,70 @@
       $('callbackBanner').classList.toggle('hidden', !(cbd && cbd.role === 'kid'));
       if (cbd) $('callbackText').textContent = `📞 「${cbd.name}」から呼び出しがありました。`;
     } else {
-      const box = $('parentList');
+      $('kidName').textContent = S.name;
+      const box = $('kidButtons');
       box.innerHTML = '';
       const ps = counterparts();
+      if (!ps.length) box.appendChild(el('div', { class: 'kidempty' }, 'おうちの人が まだ いません'));
       for (const p of ps) {
-        const b = el('button', { class: 'btn big callbtn' });
-        b.appendChild(el('span', {}, '📞 ' + p.name + 'に電話'));
-        const st = el('span', { class: 'mini' });
-        st.appendChild(el('span', { class: 'dot ' + (S.online.get(p.id) ? 'on' : ''), 'data-dot': p.id }));
-        b.appendChild(st);
+        const b = el('button', { class: 'kidbtn' });
+        b.appendChild(el('span', { class: 'kb-ic' }, '📞'));
+        const t = el('span', {});
+        t.appendChild(el('span', { class: 'kb-nm' }, p.name));
+        t.appendChild(el('span', { class: 'kb-sub' }, 'でんわする'));
+        b.appendChild(t);
+        b.appendChild(el('span', { class: 'dot ' + (S.online.get(p.id) ? 'on' : ''), 'data-dot': p.id }));
         b.addEventListener('click', () => { unlockAudio(); startRingSession(p.id); });
         box.appendChild(b);
       }
     }
   }
 
-  // 設定メニュー：こどもの端末では長押し（3秒）で開く
+  $('btnMenu').addEventListener('click', () => { $('parentMenu').classList.toggle('hidden'); });
+
+  // こどもの設定：⚙ を3秒長押しで開く（こどもが誤って開かないように）
   let menuPress = null;
-  $('btnMenu').addEventListener('click', () => {
-    if (S.role === 'parent') $('parentMenu').classList.toggle('hidden');
-    else toast('設定は「設定」を3秒長押しすると開きます', 2500);
-  });
-  const startPress = () => {
+  const startPress = (e) => {
     if (S.role !== 'kid') return;
-    menuPress = setTimeout(() => $('kidMenu').classList.remove('hidden'), 3000);
+    if (e && e.cancelable) e.preventDefault();
+    clearTimeout(menuPress);
+    menuPress = setTimeout(() => { $('inWatchAllowed').checked = S.watchAllowed; $('kidSettings').classList.remove('hidden'); }, 3000);
   };
   const endPress = () => clearTimeout(menuPress);
-  $('btnMenu').addEventListener('touchstart', startPress, { passive: true });
-  $('btnMenu').addEventListener('mousedown', startPress);
-  ['touchend', 'touchcancel', 'mouseup', 'mouseleave'].forEach(ev => $('btnMenu').addEventListener(ev, endPress));
+  $('kidGear').addEventListener('touchstart', startPress, { passive: false });
+  $('kidGear').addEventListener('mousedown', startPress);
+  ['touchend', 'touchcancel', 'mouseup', 'mouseleave'].forEach(ev => $('kidGear').addEventListener(ev, endPress));
+  $('btnKidSettingsClose').addEventListener('click', () => $('kidSettings').classList.add('hidden'));
+  $('btnKidFull').addEventListener('click', () => {
+    enterFullscreen();
+    $('kidSettings').classList.add('hidden');
+    if (!fsSupported()) toast('この端末では全画面にできません。アクセスガイド（画面の固定）を使ってください', 5000);
+  });
+
+  /* =========================================================
+     こどもの画面：全画面・ボタン以外は反応しない
+     ========================================================= */
+  const isKidMode = () => document.documentElement.classList.contains('kidmode');
+  function fsSupported() {
+    const d = document.documentElement;
+    return !!(d.requestFullscreen || d.webkitRequestFullscreen);
+  }
+  function isFullscreen() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+  function enterFullscreen() {
+    if (isFullscreen()) return;
+    const d = document.documentElement;
+    const f = d.requestFullscreen || d.webkitRequestFullscreen;
+    if (!f) return;
+    try { const r = f.call(d, { navigationUI: 'hide' }); if (r && r.catch) r.catch(() => {}); } catch (e) {}
+  }
+  // 全画面はタップがきっかけでないと入れないため、最初のタップで自動的に全画面にする
+  document.addEventListener('pointerdown', () => { if (isKidMode() && $('kidSettings').classList.contains('hidden')) enterFullscreen(); }, true);
+  // スクロール・ピンチ・長押しメニュー・ダブルタップ拡大などを止める
+  document.addEventListener('touchmove', (e) => { if (isKidMode() && e.cancelable) e.preventDefault(); }, { passive: false });
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(ev => document.addEventListener(ev, (e) => { if (isKidMode()) e.preventDefault(); }, { passive: false }));
+  document.addEventListener('contextmenu', (e) => { if (isKidMode()) e.preventDefault(); });
+  document.addEventListener('dblclick', (e) => { if (isKidMode()) e.preventDefault(); }, { passive: false });
+  document.addEventListener('selectstart', (e) => { if (isKidMode()) e.preventDefault(); });
 
   $('btnLockNow').addEventListener('click', () => lockNow());
   $('btnWipe').addEventListener('click', async () => {
@@ -1251,6 +1427,8 @@
     openLock();
   }
   function wipeAll() {
+    document.documentElement.classList.remove('kidmode');
+    $('kidSettings').classList.add('hidden');
     shutdownPeer();
     releaseWakeLock();
     remove(STORE_KEY); remove(LOCK_KEY);
@@ -1855,6 +2033,7 @@
     $('dialingView').classList.add('hidden');
     $('callView').classList.remove('hidden');
     $('homeView').classList.add('hidden');
+    $('kidView').classList.add('hidden');
   }
 
   function micOn() { return !!(S.localStream && S.localStream.getAudioTracks().some(t => t.enabled)); }
@@ -1945,8 +2124,9 @@
       return;
     }
     $('dialingView').classList.add('hidden');
-    if (S.role && S.priv && $('lockView').classList.contains('hidden') && VIEWS.every(v => v === 'homeView' || $(v).classList.contains('hidden'))) {
-      $('homeView').classList.remove('hidden');
+    const hv = homeId();
+    if (S.role && S.priv && $('lockView').classList.contains('hidden') && VIEWS.every(v => v === hv || $(v).classList.contains('hidden'))) {
+      $(hv).classList.remove('hidden');
     }
     if (msg) toast(msg);
     if (S.peer && !S.peer.destroyed) startPresence();
