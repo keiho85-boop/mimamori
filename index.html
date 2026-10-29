@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://unpkg.com 'sha256-R1cdH4vxKt5nirUXp0nIeeQNOWouAZrVoJsOjC4UQ+0='; style-src 'unsafe-inline'; img-src 'self' data: blob:; manifest-src 'self'; media-src blob: mediastream:; connect-src wss://0.peerjs.com https://0.peerjs.com https://ntfy.sh; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://unpkg.com 'sha256-1f088XxQ1qnhozmC2RrFW4k/JdV7fVbPUvdVbzZlVyw='; style-src 'unsafe-inline'; img-src 'self' data: blob:; manifest-src 'self'; media-src blob: mediastream:; connect-src wss://0.peerjs.com https://0.peerjs.com https://ntfy.sh; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta id="vp" name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#2f7d6d">
@@ -203,6 +203,7 @@
 <section id="lockView" class="wrap hidden">
   <h1 style="text-align:center">🔒 パスワードを入力</h1>
   <p class="lead" style="text-align:center" id="lockName"></p>
+  <div id="lockCallHint" class="warnbox hidden" style="text-align:center"></div>
   <div class="card" style="margin-top:14px">
     <input id="inUnlock" type="password" autocomplete="current-password" autocapitalize="off" spellcheck="false" maxlength="64" placeholder="パスワード">
     <div style="height:12px"></div>
@@ -457,7 +458,7 @@
   const NOTIFY_INTERVAL_MS = 10000;   // 通知を送る間隔
   const NOTIFY_MAX = 6;               // 1回の呼び出しで送る通知の最大数
   const RING_SESSION_MS = 120000;     // こどもの呼び出しを続ける最大時間
-  const RING_PROBE_MS = 4000;         // おうちの人がアプリを開いたか確かめる間隔
+  const RING_PROBE_MS = 2000;         // おうちの人がアプリを開いたか確かめる間隔
   const JSQR_URL = 'https://unpkg.com/jsqr@1.4.0/dist/jsQR.js';
   const JSQR_SRI = 'sha384-b5Ya4Bq3qCyz39m2ISh+4DxjAIljdeFwK/BsXLuj9gugaNwAcj/ia15fxNZL9Nlx';
   const ECDSA = { name: 'ECDSA', namedCurve: 'P-256' };
@@ -493,6 +494,7 @@
     reconnectTries: 0, idRetry: 0,
     wakeLock: null, audioCtx: null, ringTimer: null,
     pendingJoin: null,     // 参加処理中の情報
+    heldIncoming: null,    // ロック中に届いた着信（ロック解除後に応答）
   };
 
   const $ = (id) => document.getElementById(id);
@@ -869,14 +871,29 @@
   function waitText(ls) { return `しばらくお待ちください（${Math.ceil((ls.until - Date.now()) / 1000)}秒）`; }
   function openLock() {
     $('inUnlock').value = '';
+    S.store = load(STORE_KEY) || S.store;
     const r = S.store && S.store.roster;
     const b = r && parseRosterBody(r);
     const me = b && b.devices.find(d => d.id === S.store.deviceId);
     $('lockName').textContent = me ? `「${me.name}」の端末` : '';
+    // パスワード入力中に、裏で接続を始めておく（着信はロック解除まで保留）
+    if (me) {
+      S.roster = r; S.rb = b; S.pubCache.clear();
+      S.deviceId = S.store.deviceId; S.role = me.role; S.name = me.name;
+      if (!S.peer || S.peer.destroyed) startPeer();
+    }
+    updateLockCallHint();
     const ls = lockState();
     $('lockErr').textContent = ls.until > Date.now() ? waitText(ls) : '';
     show('lockView');
     setTimeout(() => { try { $('inUnlock').focus(); } catch (e) {} }, 100);
+  }
+  function updateLockCallHint() {
+    const h = $('lockCallHint');
+    const dev = (S.heldIncoming && S.heldIncoming.from) || S.callbackDev;
+    const d = dev && devById(dev);
+    if (d) { h.textContent = `📞 「${d.name}」から呼び出し中です。ロックを解除すると、すぐにつながります。`; h.classList.remove('hidden'); }
+    else h.classList.add('hidden');
   }
   let unlocking = false;
   async function tryUnlock() {
@@ -898,6 +915,7 @@
       S.store = st;
       await loadIdentity(privStr);
       enterHome();
+      afterUnlock();
     } catch (e) {
       $('inUnlock').value = '';
       ls.fails = (ls.fails || 0) + 1;
@@ -918,6 +936,23 @@
     const ok = await confirmDialog('この端末の設定をすべて消して、最初からやり直します。\nほかのおうちの人の端末から追加し直してください。\n（ほかに登録済みのおうちの人の端末がない場合は、こどもの端末も登録し直しになります）', '初期化する');
     if (ok) wipeAll();
   });
+
+  // ロック解除直後：保留中の着信や、通知から開いた場合の折り返しをすぐ処理する
+  function afterUnlock() {
+    const h = S.heldIncoming;
+    S.heldIncoming = null;
+    $('lockCallHint').classList.add('hidden');
+    if (h) {
+      if (S.callbackDev === h.from) { unlockAudio(); answer(h.call, h.type, h.n, h.fp, h.from); }
+      else showIncoming(h);
+      return;
+    }
+    if (S.callbackDev && devById(S.callbackDev) && !S.call && !S.incoming) {
+      const id = S.callbackDev;
+      // 通知から開いた場合は、こちらからすぐに折り返す（こどもの端末は自動で応答する）
+      setTimeout(() => { if (!S.call && !S.incoming && S.callbackDev === id) { S.callbackDev = null; $('callbackBanner').classList.add('hidden'); startCall('call', id); } }, 300);
+    }
+  }
 
   async function loadIdentity(privStr) {
     const r = S.store.roster;
@@ -1426,6 +1461,7 @@
   });
 
   function shutdownPeer() {
+    if (S.heldIncoming) { try { S.heldIncoming.call.close(); } catch (e) {} S.heldIncoming = null; }
     stopRingSession();
     endCall();
     stopPresence();
@@ -1695,6 +1731,7 @@
     conn.on('data', (d) => { handleMsg(devId, d, conn).catch(() => {}); });
   }
   async function sendSigned(devId, sig, n) {
+    if (!S.priv) return;
     const tag = await ecSign(`${sig}|${n}|${S.myPeerId}|${peerIdOf(devId)}`);
     sendMsg(devId, { t: sig, n, tag });
   }
@@ -1766,6 +1803,11 @@
         try { inc.call.close(); } catch (e) {}
         toast(`「${nameOf(devId)}」から着信がありました（不在）`);
         startPresence();
+      }
+      if (S.heldIncoming && S.heldIncoming.n === d.n) {
+        try { S.heldIncoming.call.close(); } catch (e) {}
+        S.heldIncoming = null;
+        updateLockCallHint();
       }
       const p = S.pendingIn.get(d.n);
       if (p && p.call) { try { p.call.close(); } catch (e) {} }
@@ -1876,7 +1918,7 @@
       try { call.close(); } catch (e) {}
       return;
     }
-    if (S.call || S.incoming || S.seenNonces.has(md.n)) { try { call.close(); } catch (e) {} return; }
+    if (S.seenNonces.has(md.n) || ((S.call || S.incoming || S.heldIncoming) && !kidShouldYield(devId, md.type))) { try { call.close(); } catch (e) {} return; }
     const p = S.pendingIn.get(md.n) || { call: null, auth: null, from: devId };
     if (p.from !== devId) { try { call.close(); } catch (e) {} return; }
     p.call = call;
@@ -1915,15 +1957,50 @@
 
     // ここまで来たら名簿に載っている本物の端末からの着信
     setOnline(from, true);
-    if (S.call || S.incoming) { try { call.close(); } catch (e) {} return; }
+    const inc = { call, n, type: md.type, fp: auth.fp, from };
+
+    // こどもが呼び出し中の相手から電話が来たら、こどもの発信をやめて自動で応答する（同時発信の解消）
+    if (kidShouldYield(from, md.type)) {
+      if (S.call) endCall('', true);
+      answer(call, 'call', n, auth.fp, from);
+      return;
+    }
+    if (S.call || S.incoming || S.heldIncoming) { try { call.close(); } catch (e) {} return; }
 
     if (S.role === 'kid' && md.type === 'watch' && S.watchAllowed) {
       answer(call, 'watch', n, auth.fp, from);
       return;
     }
-    S.incoming = { call, n, type: md.type, fp: auth.fp, from };
+    // おうちの人の端末がロック中：解除するまで保留（解除後すぐ応答できる）
+    if (!S.priv) {
+      S.heldIncoming = inc;
+      updateLockCallHint();
+      call.on('close', () => {
+        if (S.heldIncoming && S.heldIncoming.call === call) { S.heldIncoming = null; updateLockCallHint(); }
+      });
+      return;
+    }
+    // 通知から開いて折り返し待ちの相手なら、鳴らさずにすぐ応答する
+    if (S.role === 'parent' && S.callbackDev === from && md.type === 'call') {
+      unlockAudio();
+      answer(call, 'call', n, auth.fp, from);
+      return;
+    }
+    showIncoming(inc);
+  }
+
+  // こどもの端末が「この人を呼び出し中」で、その人から電話が来たら、こども側が譲って応答する
+  function kidShouldYield(from, type) {
+    if (S.role !== 'kid' || type !== 'call' || !S.ring || S.ring.target !== from) return false;
+    if (S.incoming) return false;
+    return !S.call || (!S.verified && S.callDev === from);
+  }
+
+  function showIncoming(inc) {
+    const { call, from } = inc;
+    S.incoming = inc;
     $('inTitle').textContent = `${nameOf(from)}から電話です`;
-    $('inSub').textContent = md.type === 'watch' ? '見守りのリクエスト' : 'ビデオ通話';
+    $('inSub').textContent = inc.type === 'watch' ? '見守りのリクエスト' : 'ビデオ通話';
     $('incomingView').classList.remove('hidden');
     startRing('ring');
     call.on('close', () => {
@@ -1970,6 +2047,8 @@
       return;
     }
     stopRingSession();
+    stopRing();
+    $('dialingView').classList.add('hidden');
     S.call = call; S.callType = type; S.callDev = from; S.callNonce = n; S.callOfferFp = offerFp;
     S.wantMic = true; S.wantVideo = true;
     S.verified = true; // 応答側は発信者の署名と指紋を確認済み
