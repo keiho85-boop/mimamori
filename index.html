@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://unpkg.com 'sha256-YmcL0CuePrHvKROXEuoz4GsmnCvJJciZ27SyZo1t5UM='; style-src 'unsafe-inline'; img-src 'self' data: blob:; manifest-src 'self'; media-src blob: mediastream:; connect-src wss://0.peerjs.com https://0.peerjs.com https://ntfy.sh; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://unpkg.com 'sha256-5TlMl6hh+kbx8t25ydQK7KzhFvxUcwWxR3GSML2W+Ic='; style-src 'unsafe-inline'; img-src 'self' data: blob:; manifest-src 'self'; media-src blob: mediastream:; connect-src wss://0.peerjs.com https://0.peerjs.com https://ntfy.sh; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#2f7d6d">
@@ -109,27 +109,52 @@
 
   #toast{position:fixed;left:50%;bottom:calc(30px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:50;
     background:#1f2d2aee;color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;max-width:90vw;text-align:center}
+  .role.sel{border-color:var(--main);background:var(--main2)}
+  .devcard{padding:14px 16px}
+  .devhead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+  .devname{font-weight:700;font-size:17px;margin-bottom:6px}
+  .devhead .devname{margin-bottom:0}
+  .devrole{font-size:12px;color:var(--sub);background:#f0f4f3;border-radius:999px;padding:3px 10px;white-space:nowrap}
+  .btnrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+  .btnrow .btn + .btn{margin-top:0}
+  .btn.small{font-size:15px;padding:10px;margin-top:12px}
+  .callbtn{justify-content:space-between;margin-bottom:10px}
+  .callbtn + .callbtn{margin-top:0}
+  .callbtn .mini{display:flex;align-items:center}
+  .callbtn .dot{width:14px;height:14px;background:#ffffff66}
+  .callbtn .dot.on{background:#7dffb0;box-shadow:0 0 0 4px #ffffff33}
 </style>
 </head>
 <body>
 
-<!-- ========== 最初の画面：役割を選ぶ ========== -->
+<!-- ========== 最初の画面 ========== -->
 <section id="welcomeView" class="wrap hidden">
   <h1>👨‍👩‍👧 みまもりビデオ通話</h1>
-  <p class="lead">はじめに、この端末の役割を選んでください。<br>おうちの人の端末で設定してから、こどもの端末を登録します。</p>
-  <div class="roles">
-    <div class="role" id="pickParent"><div class="ic">🧑</div><div class="nm">おうちの人</div><div class="ds">見守る・電話する</div></div>
-    <div class="role" id="pickKid"><div class="ic">🧒</div><div class="nm">こども</div><div class="ds">家に置く端末</div></div>
+  <p class="lead">家族の端末どうしだけでつながる、見守りとビデオ通話のアプリです。</p>
+  <div class="card">
+    <h2>はじめて使う</h2>
+    <p class="note">この端末を「おうちの人」の1台目として設定し、家族を作ります。</p>
+    <button id="btnCreateFamily" class="btn">🏠 家族を作る（おうちの人）</button>
   </div>
-  <p class="note" style="margin-top:14px">※ 映像と音声は端末どうしで暗号化して直接やりとりし、どこにも保存されません。</p>
+  <div class="card">
+    <h2>家族に追加してもらう</h2>
+    <p class="note">すでに設定済みのおうちの人の端末で「端末を追加」を開き、表示されたQRコードをこの端末のカメラで読み取ってください。読み取れない場合は、下のボタンから登録コードを入力できます。</p>
+    <button id="btnJoinByCode" class="btn sub">⌨ 登録コードを入力する</button>
+  </div>
+  <p class="note">※ 映像と音声は端末どうしで暗号化して直接やりとりし、どこにも保存されません。</p>
   <div id="iosStandaloneNote" class="warnbox hidden" style="margin-top:14px">iPhone・iPadでは、ホーム画面のアイコンから開くと、Safariで登録した内容とは別扱いになります。Safariで登録した場合は、Safariから開いて使ってください。</div>
 </section>
 
-<!-- ========== おうちの人：PIN設定 ========== -->
+<!-- ========== おうちの人：パスワード設定 ========== -->
 <section id="pinSetView" class="wrap hidden">
   <h1>🔒 ロック用のパスワード</h1>
-  <p class="lead">このアプリを開くたびに入力するパスワードを決めてください。スマホを他の人が触っても、見守り画面を開けないようにするためのものです。</p>
+  <p class="lead">このアプリを開くたびに入力するパスワードを決めてください。スマホを他の人が触っても、見守り画面を開けないようにするためのものです。<b>端末ごとに別々</b>に決めます。</p>
   <div class="card">
+    <div id="nameField">
+      <label class="fld" for="inMyName">この端末の名前</label>
+      <input id="inMyName" type="text" maxlength="12" autocomplete="off" placeholder="例：パパ、ママ">
+      <div class="hint">こどもの画面に「○○に電話」と表示されます。</div>
+    </div>
     <label class="fld" for="inPin1">パスワード</label>
     <input id="inPin1" type="password" autocomplete="new-password" autocapitalize="off" spellcheck="false" maxlength="64">
     <div class="hint">英字・数字・記号を使う場合は8文字以上、数字だけの場合は6桁以上（最大64文字）。英字・数字・記号を混ぜるほど安全です。ほかのサービスと同じものや、誕生日などは避けてください。</div>
@@ -145,36 +170,86 @@
 <!-- ========== おうちの人：ロック解除 ========== -->
 <section id="lockView" class="wrap hidden">
   <h1 style="text-align:center">🔒 パスワードを入力</h1>
+  <p class="lead" style="text-align:center" id="lockName"></p>
   <div class="card" style="margin-top:14px">
     <input id="inUnlock" type="password" autocomplete="current-password" autocapitalize="off" spellcheck="false" maxlength="64" placeholder="パスワード">
     <div style="height:12px"></div>
     <p id="lockErr" class="err" style="text-align:center"></p>
     <button id="btnUnlock" class="btn">ロックを解除</button>
   </div>
-  <p class="note" style="text-align:center;margin-top:18px">パスワードを忘れた場合は、下のボタンで初期化して、こどもの端末も登録し直してください。</p>
-  <button id="btnForgot" class="link" style="display:block;margin:0 auto">パスワードを忘れた（初期化する）</button>
+  <p class="note" style="text-align:center;margin-top:18px">パスワードを忘れた場合は、下のボタンでこの端末を初期化し、ほかのおうちの人の端末から追加し直してください。</p>
+  <button id="btnForgot" class="link" style="display:block;margin:0 auto">パスワードを忘れた（この端末を初期化する）</button>
 </section>
 
-<!-- ========== おうちの人：ペアリング用QR ========== -->
-<section id="pairShowView" class="wrap hidden">
-  <h1>📱 こどもの端末を登録</h1>
-  <div class="warnbox">⚠ このQRコードとコードは「合鍵」です。こどもの端末以外に見せたり、写真に撮って送ったりしないでください。</div>
+<!-- ========== 登録コードの入力 ========== -->
+<section id="joinCodeView" class="wrap hidden">
+  <h1>⌨ 登録コードを入力</h1>
+  <p class="lead">おうちの人の端末の「端末を追加」画面に表示されている登録コードを入力（貼り付け）してください。コードの有効期限は10分です。</p>
   <div class="card">
-    <h2>方法1：QRコードを読み取る</h2>
-    <p class="note">こどもの端末（iPhone/iPad）の<b>カメラアプリ</b>でこのQRコードを写し、表示されたリンクを開いてください（Safariで開きます）。</p>
-    <div class="qr"><img id="qrImg" alt="ペアリング用QRコード"></div>
-    <h2>方法2：コードを入力する</h2>
-    <p class="note">こどもの端末でこのページを開き、「こども」を選んで次のコードを入力してください。</p>
-    <div class="code" id="pairCode"></div>
+    <label class="fld" for="inJoinCode">登録コード</label>
+    <input id="inJoinCode" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="P.XXXX… または K.XXXX…">
+    <div style="height:14px"></div>
+    <p id="joinCodeErr" class="err"></p>
+    <button id="btnJoinCode" class="btn">登録する</button>
+    <button id="btnJoinCodeBack" class="btn sub">もどる</button>
   </div>
-  <button id="btnPairDone" class="btn">登録が終わった</button>
+</section>
+
+<!-- ========== 登録中 ========== -->
+<section id="joiningView" class="wrap hidden">
+  <h1>📡 登録しています…</h1>
+  <p class="lead" id="joiningMsg">おうちの人の端末と安全に接続しています。QRコードを表示している端末の画面は、そのまま開いておいてください。</p>
+  <p id="joiningErr" class="err"></p>
+  <button id="btnJoiningBack" class="btn sub hidden">最初の画面にもどる</button>
+</section>
+
+<!-- ========== おうちの人：端末の一覧 ========== -->
+<section id="devicesView" class="wrap hidden">
+  <h1>📋 登録している端末</h1>
+  <p class="lead">なくした端末や使わなくなった端末は「取り消す」で、その端末だけを無効にできます。</p>
+  <div id="devList"></div>
+  <button id="btnAddDevice" class="btn">＋ 端末を追加</button>
+  <button id="btnDevicesBack" class="btn sub">もどる</button>
+</section>
+
+<!-- ========== おうちの人：端末の追加 ========== -->
+<section id="addDeviceView" class="wrap hidden">
+  <h1>＋ 端末を追加</h1>
+  <div id="addForm">
+    <div class="card">
+      <label class="fld">追加する端末の種類</label>
+      <div class="roles">
+        <div class="role" data-addrole="kid"><div class="ic">🧒</div><div class="nm">こども</div><div class="ds">家に置く端末</div></div>
+        <div class="role" data-addrole="parent"><div class="ic">🧑</div><div class="nm">おうちの人</div><div class="ds">見守る・電話する</div></div>
+      </div>
+      <div style="height:10px"></div>
+      <label class="fld" for="inAddName">名前</label>
+      <input id="inAddName" type="text" maxlength="12" autocomplete="off" placeholder="例：リビング、こども部屋、ママ">
+      <div style="height:14px"></div>
+      <p id="addErr" class="err"></p>
+      <button id="btnMakeInvite" class="btn">QRコードを表示</button>
+      <button id="btnAddBack" class="btn sub">もどる</button>
+    </div>
+  </div>
+  <div id="addShow" class="hidden">
+    <div class="warnbox">⚠ このQRコードと登録コードは「招待状」です。追加する端末以外に見せたり、写真に撮って送ったりしないでください。<b>1回だけ・10分間</b>有効です。</div>
+    <div class="card">
+      <p class="note" id="addTarget"></p>
+      <p class="note">追加する端末の<b>カメラアプリ</b>でQRコードを読み取り、表示されたリンクを開いてください（iPhone/iPadはSafari、AndroidはChromeで開きます）。<br>この画面は、登録が終わるまで開いたままにしてください。</p>
+      <div class="qr"><img id="qrImg" alt="登録用QRコード"></div>
+      <p class="note">読み取れない場合の登録コード：</p>
+      <div class="code" id="inviteCode"></div>
+      <p class="note" style="text-align:center;margin-top:10px" id="inviteTimer"></p>
+    </div>
+    <button id="btnInviteCancel" class="btn sub">やめる</button>
+  </div>
 </section>
 
 <!-- ========== おうちの人：通知の設定 ========== -->
 <section id="notifyView" class="wrap hidden">
   <h1>🔔 通知の設定</h1>
-  <p class="lead">こどもが「おうちの人に電話」を押したとき、このアプリを閉じていても通知でお知らせします。無料の通知アプリ「<b>ntfy</b>」を使います。</p>
-  <div class="warnbox">⚠ 下の「通知の名前」は合鍵から作った秘密の名前です。家族以外に教えないでください。</div>
+  <p class="lead">こどもがこの端末あてに「電話」を押したとき、このアプリを閉じていても通知でお知らせします。無料の通知アプリ「<b>ntfy</b>」を使います。通知の名前は<b>この端末専用</b>です。</p>
+  <div class="warnbox">⚠ 下の「通知の名前」は秘密の名前です。家族以外に教えないでください。</div>
   <div class="card">
     <h2>通知の名前</h2>
     <div class="code" id="ntfyTopic"></div>
@@ -202,24 +277,10 @@
   <button id="btnNotifyBack" class="btn">もどる</button>
 </section>
 
-<!-- ========== こども：登録 ========== -->
-<section id="kidPairView" class="wrap hidden">
-  <h1>🧒 こどもの端末として登録</h1>
-  <p class="lead">おうちの人の端末に表示されている登録コードを入力してください。</p>
-  <div class="card">
-    <label class="fld" for="inPairCode">登録コード</label>
-    <input id="inPairCode" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-…">
-    <div style="height:14px"></div>
-    <p id="kidPairErr" class="err"></p>
-    <button id="btnKidPair" class="btn">登録する</button>
-    <button id="btnKidPairBack" class="btn sub">もどる</button>
-  </div>
-</section>
-
 <!-- ========== 待受（共通） ========== -->
 <section id="homeView" class="wrap hidden">
   <div class="top">
-    <div class="who"><span id="roleIcon">🧑</span> <b id="roleName">おうちの人</b></div>
+    <div class="who"><span id="roleIcon">🧑</span> <b id="myNameLabel"></b><br><span id="roleLabel"></span></div>
     <button id="btnMenu" class="link">設定</button>
   </div>
 
@@ -227,25 +288,22 @@
 
   <div class="card">
     <div class="status"><span id="selfDot" class="dot wait"></span><span id="selfStatus">接続しています…</span></div>
-    <div class="status" style="margin-top:10px"><span id="otherDot" class="dot"></span><span id="otherStatus">相手の端末：確認中…</span></div>
   </div>
 
   <!-- おうちの人用 -->
   <div id="parentPanel" class="hidden">
-    <div id="callbackBanner" class="warnbox hidden">📞 こどもから呼び出しがありました。<br>「ビデオ通話」で折り返せます。
+    <div id="callbackBanner" class="warnbox hidden"><span id="callbackText">📞 こどもから呼び出しがありました。</span>
       <button id="btnCallback" class="btn" style="margin-top:10px">📹 いま折り返す</button>
     </div>
-    <button id="btnWatch" class="btn big">👀 見守る</button>
-    <button id="btnCallKid" class="btn big sub">📹 ビデオ通話</button>
-    <p class="note" style="margin-top:12px">
+    <div id="kidList"></div>
+    <p class="note" style="margin-top:4px">
       「見守る」：こどもの端末が<b>見守りモード</b>なら自動でつながり、映像を確認できます。こちらのカメラは送られません。「話しかける」でこちらの声を届けられます。<br>
-      「ビデオ通話」：こどもの端末で呼び出し音が鳴り、応答するとお互いの顔を見て話せます。
+      「通話」：こどもの端末で呼び出し音が鳴り、応答するとお互いの顔を見て話せます。
     </p>
     <div id="parentMenu" class="card hidden" style="margin-top:14px">
       <h2>設定</h2>
+      <button id="btnDevices" class="btn sub">📋 登録している端末（追加・取り消し）</button>
       <button id="btnNotifySetup" class="btn sub">🔔 通知の設定（アプリを閉じていても知らせる）</button>
-      <button id="btnShowPair" class="btn sub">📱 こどもの端末を登録（QRを表示）</button>
-      <button id="btnRepair" class="btn sub">🔁 登録をやり直す（今の登録を無効化）</button>
       <button id="btnLockNow" class="btn sub">🔒 ロックする</button>
       <button id="btnWipe" class="btn danger">🗑 この端末の設定をすべて消す</button>
     </div>
@@ -253,7 +311,7 @@
 
   <!-- こども用 -->
   <div id="kidPanel" class="hidden">
-    <button id="btnCallParent" class="btn big">📞 おうちの人に電話</button>
+    <div id="parentList"></div>
     <div class="card" style="margin-top:14px">
       <div class="switch">
         <div><div class="t">見守りモード</div><div class="d">オンのとき、おうちの人の「見守る」で自動的につながります。</div></div>
@@ -263,7 +321,7 @@
     <p class="note">この画面を開いたままにしてください（ほかのアプリに切り替えたり、画面を閉じるとつながりません）。充電しながらの利用がおすすめです。</p>
     <div id="kidMenu" class="card hidden" style="margin-top:14px">
       <h2>設定</h2>
-      <button id="btnKidUnpair" class="btn danger">登録を解除する</button>
+      <button id="btnKidUnpair" class="btn danger">この端末の登録を解除する</button>
     </div>
   </div>
 </section>
@@ -272,7 +330,7 @@
 <section id="callView" class="hidden">
   <video id="remoteVideo" autoplay playsinline></video>
   <video id="localVideo" autoplay playsinline muted></video>
-  <div id="noVideo" class="hidden">🧑<span>おうちの人とつながっています<br>（声だけ届きます）</span></div>
+  <div id="noVideo" class="hidden">🧑<span id="noVideoText">おうちの人とつながっています<br>（声だけ届きます）</span></div>
   <div id="callLabel">つながっています</div>
   <div id="watchBanner" class="hidden">👀 おうちの人が見ています</div>
   <div class="ctrls">
@@ -287,7 +345,7 @@
 <!-- ========== 着信 ========== -->
 <section id="incomingView" class="overlay hidden">
   <div class="ic">📞</div>
-  <div class="tt" id="inTitle">おうちの人から電話です</div>
+  <div class="tt" id="inTitle">電話です</div>
   <div class="st" id="inSub">ビデオ通話</div>
   <div class="row">
     <div><button id="btnDecline" class="rb ng">✖</button><div class="rl">でない</div></div>
@@ -321,47 +379,55 @@
   /* =========================================================
      定数・状態
      ========================================================= */
-  const STORE_KEY = 'mimamori-v2';
-  const LOCK_KEY = 'mimamori-v2-lock';
-  const ID_PREFIX = 'mmr2-';
+  const STORE_KEY = 'mimamori-v3';
+  const LOCK_KEY = 'mimamori-v3-lock';
+  const ID_PREFIX = 'mmr3-';
+  const JOIN_PREFIX = 'mmr3j-';
   const DIAL_TIMEOUT_MS = 45000;
   const AUTH_TIMEOUT_MS = 15000;
   const PRESENCE_INTERVAL_MS = 20000;
+  const MAX_CLOCK_SKEW_MS = 5 * 60 * 1000;
+  const PBKDF2_ITER = 600000;
+  const PIN_MIN_DIGITS = 6, PIN_MIN_MIXED = 8, PIN_MAX = 64;
+  const INVITE_TTL_MS = 10 * 60 * 1000;
   const NTFY_URL = 'https://ntfy.sh/';
   const NOTIFY_INTERVAL_MS = 10000;   // 通知を送る間隔
   const NOTIFY_MAX = 6;               // 1回の呼び出しで送る通知の最大数
   const RING_SESSION_MS = 120000;     // こどもの呼び出しを続ける最大時間
   const RING_PROBE_MS = 4000;         // おうちの人がアプリを開いたか確かめる間隔
-  const MAX_CLOCK_SKEW_MS = 5 * 60 * 1000;
-  const PBKDF2_ITER = 600000;
-  const PIN_MIN_DIGITS = 6, PIN_MIN_MIXED = 8, PIN_MAX = 64;
+  const ECDSA = { name: 'ECDSA', namedCurve: 'P-256' };
+  const ECDSA_SIGN = { name: 'ECDSA', hash: 'SHA-256' };
 
   const S = {
-    role: null,            // 'parent' | 'kid'
-    secret: null,          // Uint8Array（ペアリング秘密鍵。メモリ上のみ）
-    authKey: null,         // HMAC 鍵（CryptoKey, 取り出し不可）
-    myId: '', otherId: '',
+    // この端末
+    store: null,           // localStorage に保存している内容
+    deviceId: '', name: '', role: null, priv: null,
+    // 家族の名簿（おうちの人の端末が署名したもの）
+    roster: null, rb: null, pubCache: new Map(),
+    myPeerId: '',
     peer: null,
+    online: new Map(),     // deviceId -> true/false/null
+    // 通話
     localStream: null,
-    call: null,            // 通話中/発信中の MediaConnection
-    callType: null,        // 'watch' | 'call'
-    callNonce: null,
-    callOfferFp: null,
-    verified: false,       // 相手の正当性を確認済みか
-    pendingRemote: null,   // 確認前に届いた相手の映像
+    call: null, callType: null, callDev: null, callNonce: null, callOfferFp: null,
+    verified: false, pendingRemote: null,
     wantMic: false, wantVideo: false,
-    incoming: null,        // 着信（確認済み・応答待ち）
-    pendingIn: new Map(),  // nonce -> { call, auth }（確認待ちの着信）
+    incoming: null,
+    pendingIn: new Map(),
     seenNonces: new Set(),
     authFails: [],
-    ntfyTopic: '',
-    ring: null,          // こどもの呼び出しセッション
-    callbackPending: false,
     facing: 'user',
     watchAllowed: true,
+    // 招待
+    invites: new Map(), inviteTimer: null, addRole: null,
+    // こどもの呼び出し
+    ring: null,
+    callbackDev: null,
+    // そのほか
     presenceTimer: null, dialTimer: null, authTimer: null, iceTimer: null,
     reconnectTries: 0, idRetry: 0,
     wakeLock: null, audioCtx: null, ringTimer: null,
+    pendingJoin: null,     // 参加処理中の情報
   };
 
   const $ = (id) => document.getElementById(id);
@@ -373,6 +439,7 @@
   function load(key) { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) { return null; } }
   function save(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); return true; } catch (e) { return false; } }
   function remove(key) { try { localStorage.removeItem(key); } catch (e) {} }
+  function saveStore() { return save(STORE_KEY, S.store); }
 
   /* =========================================================
      暗号まわり
@@ -398,32 +465,47 @@
     }
     return new Uint8Array(out);
   }
-  function groupCode(code) { return code.match(/.{1,4}/g).join('-'); }
   function b64(bytes) { let s = ''; bytes.forEach(b => s += String.fromCharCode(b)); return btoa(s); }
   function unb64(str) { return Uint8Array.from(atob(str), c => c.charCodeAt(0)); }
   function randBytes(n) { const a = new Uint8Array(n); crypto.getRandomValues(a); return a; }
   function randId() { return toB32(randBytes(16)); }
+  function hex(bytes) { return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(''); }
 
-  // ペアリング秘密鍵から「接続ID」と「認証鍵」を別々に導出する（IDから鍵は推測できない）
-  async function deriveFromSecret(secret) {
-    const base = await crypto.subtle.importKey('raw', secret, 'HKDF', false, ['deriveBits', 'deriveKey']);
-    const salt = enc.encode('mimamori-v2');
-    const idBits = await crypto.subtle.deriveBits({ name: 'HKDF', hash: 'SHA-256', salt, info: enc.encode('peer-id') }, base, 160);
-    const hex = Array.from(new Uint8Array(idBits)).map(b => b.toString(16).padStart(2, '0')).join('');
-    const authKey = await crypto.subtle.deriveKey(
-      { name: 'HKDF', hash: 'SHA-256', salt, info: enc.encode('call-auth') },
-      base, { name: 'HMAC', hash: 'SHA-256', length: 256 }, false, ['sign', 'verify']);
-    const topicBits = await crypto.subtle.deriveBits({ name: 'HKDF', hash: 'SHA-256', salt, info: enc.encode('ntfy-topic') }, base, 128);
-    const topic = 'mmr-' + Array.from(new Uint8Array(topicBits)).map(b => b.toString(16).padStart(2, '0')).join('');
-    return { kidId: ID_PREFIX + hex + '-k', parentId: ID_PREFIX + hex + '-p', authKey, topic };
+  // 端末ごとの署名鍵（ECDSA P-256）
+  async function genDeviceKey() {
+    const kp = await crypto.subtle.generateKey(ECDSA, true, ['sign', 'verify']);
+    const privJwk = await crypto.subtle.exportKey('jwk', kp.privateKey);
+    const pubJwk = await crypto.subtle.exportKey('jwk', kp.publicKey);
+    return { privJwkStr: JSON.stringify(privJwk), pubStr: JSON.stringify({ kty: pubJwk.kty, crv: pubJwk.crv, x: pubJwk.x, y: pubJwk.y }) };
   }
-  async function sign(text) {
-    const sig = await crypto.subtle.sign('HMAC', S.authKey, enc.encode(text));
+  async function importPriv(privJwkStr) {
+    // 取り出し不可の鍵として読み込む
+    return crypto.subtle.importKey('jwk', JSON.parse(privJwkStr), ECDSA, false, ['sign']);
+  }
+  async function pubKeyOf(devId) {
+    if (S.pubCache.has(devId)) return S.pubCache.get(devId);
+    const d = devById(devId);
+    if (!d) return null;
+    const k = await crypto.subtle.importKey('jwk', JSON.parse(d.pub), ECDSA, false, ['verify']);
+    S.pubCache.set(devId, k);
+    return k;
+  }
+  async function ecSign(text) {
+    const sig = await crypto.subtle.sign(ECDSA_SIGN, S.priv, enc.encode(text));
     return b64(new Uint8Array(sig));
   }
-  async function verifySig(text, tag) {
+  async function ecVerifyWith(key, text, sig) {
+    if (!key || typeof sig !== 'string') return false;
+    try { return await crypto.subtle.verify(ECDSA_SIGN, key, unb64(sig), enc.encode(text)); } catch (e) { return false; }
+  }
+  async function ecVerify(devId, text, sig) { return ecVerifyWith(await pubKeyOf(devId), text, sig); }
+
+  // 招待用の使い捨て鍵（HMAC）
+  async function hmacKey(bytes) { return crypto.subtle.importKey('raw', bytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']); }
+  async function hmacSign(key, text) { return b64(new Uint8Array(await crypto.subtle.sign('HMAC', key, enc.encode(text)))); }
+  async function hmacVerify(key, text, tag) {
     if (typeof tag !== 'string') return false;
-    try { return await crypto.subtle.verify('HMAC', S.authKey, unb64(tag), enc.encode(text)); } catch (e) { return false; }
+    try { return await crypto.subtle.verify('HMAC', key, unb64(tag), enc.encode(text)); } catch (e) { return false; }
   }
 
   // パスワードから暗号化鍵を作る（総当たり対策で計算を重くする）
@@ -432,16 +514,16 @@
     return crypto.subtle.deriveKey({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: PBKDF2_ITER },
       base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
   }
-  async function encryptSecret(secret, pin) {
+  async function encryptStr(str, pin) {
     const salt = randBytes(16), iv = randBytes(12);
     const key = await pinKey(pin, salt);
-    const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, secret));
+    const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(str)));
     return { salt: b64(salt), iv: b64(iv), ct: b64(ct) };
   }
-  async function decryptSecret(encObj, pin) {
-    const key = await pinKey(pin, unb64(encObj.salt));
-    const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(encObj.iv) }, key, unb64(encObj.ct));
-    return new Uint8Array(pt);
+  async function decryptStr(o, pin) {
+    const key = await pinKey(pin, unb64(o.salt));
+    const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(o.iv) }, key, unb64(o.ct));
+    return new TextDecoder().decode(pt);
   }
 
   // SDP から DTLS 証明書の指紋を取り出す（中継サーバーによるすり替え検出に使う）
@@ -451,7 +533,7 @@
     const re = /^a=fingerprint:(\S+)\s+([0-9A-Fa-f:]+)\s*$/gm;
     let m;
     while ((m = re.exec(sdp))) set.add(m[1].toLowerCase() + ' ' + m[2].toUpperCase());
-    return set.size === 1 ? [...set][0] : null; // 複数・なしは不正扱い
+    return set.size === 1 ? [...set][0] : null;
   }
   function waitFor(fn, timeoutMs) {
     return new Promise((resolve) => {
@@ -466,11 +548,99 @@
       tick();
     });
   }
+  async function connFingerprints(conn) {
+    // データ接続の両端の指紋（発信側, 受信側）
+    const pc = await waitFor(() => conn.peerConnection && conn.peerConnection.localDescription
+      && conn.peerConnection.remoteDescription && conn.peerConnection, 10000);
+    if (!pc) return null;
+    const local = sdpFingerprint(pc.localDescription.sdp), remote = sdpFingerprint(pc.remoteDescription.sdp);
+    if (!local || !remote) return null;
+    return pc.localDescription.type === 'offer' ? { init: local, resp: remote } : { init: remote, resp: local };
+  }
+
+  /* =========================================================
+     名簿
+     ========================================================= */
+  function devById(id) { return S.rb ? S.rb.devices.find(d => d.id === id) : null; }
+  function peerIdOf(devId) { return ID_PREFIX + S.rb.familyId + '-' + devId; }
+  function devIdOfPeer(peerId) {
+    if (!S.rb || typeof peerId !== 'string') return null;
+    const pre = ID_PREFIX + S.rb.familyId + '-';
+    if (!peerId.startsWith(pre)) return null;
+    const id = peerId.slice(pre.length);
+    return devById(id) ? id : null;
+  }
+  function otherDevices() { return S.rb ? S.rb.devices.filter(d => d.id !== S.deviceId) : []; }
+  function counterparts() { return otherDevices().filter(d => d.role !== S.role); }
+  function nameOf(devId) { const d = devById(devId); return d ? d.name : '不明な端末'; }
+
+  async function makeRoster(body) {
+    const bodyStr = JSON.stringify(body);
+    return { bodyStr, signer: S.deviceId, sig: await ecSign(bodyStr) };
+  }
+  function parseRosterBody(r) {
+    try {
+      const b = JSON.parse(r.bodyStr);
+      if (!b || typeof b.familyId !== 'string' || typeof b.ver !== 'number' || !Array.isArray(b.devices)) return null;
+      for (const d of b.devices) {
+        if (typeof d.id !== 'string' || typeof d.name !== 'string' || !['parent', 'kid'].includes(d.role) || typeof d.pub !== 'string') return null;
+      }
+      return b;
+    } catch (e) { return null; }
+  }
+  // 新しい名簿を受け入れてよいか（今の名簿に載っているおうちの人の署名が必要）
+  async function verifyNewRoster(r) {
+    if (!r || typeof r.bodyStr !== 'string' || typeof r.signer !== 'string') return null;
+    const b = parseRosterBody(r);
+    if (!b || b.familyId !== S.rb.familyId) return null;
+    const newer = b.ver > S.rb.ver || (b.ver === S.rb.ver && r.sig !== S.roster.sig && r.sig > S.roster.sig);
+    if (!newer) return null;
+    const signer = devById(r.signer);
+    if (!signer || signer.role !== 'parent') return null;
+    if (!(await ecVerify(r.signer, r.bodyStr, r.sig))) return null;
+    return b;
+  }
+  function applyRoster(r, b) {
+    S.roster = r; S.rb = b;
+    S.pubCache.clear();
+    S.store.roster = r;
+    saveStore();
+    for (const id of [...S.online.keys()]) if (!devById(id)) S.online.delete(id);
+    if (!devById(S.deviceId)) { selfRevoked(); return; }
+    const me = devById(S.deviceId);
+    S.name = me.name;
+    if (!$('homeView').classList.contains('hidden')) renderHome();
+    if (!$('devicesView').classList.contains('hidden')) renderDevices();
+  }
+  async function acceptRoster(r) {
+    const b = await verifyNewRoster(r);
+    if (b) { applyRoster(r, b); return true; }
+    return false;
+  }
+  async function updateRoster(mutator) {
+    const b = JSON.parse(S.roster.bodyStr);
+    mutator(b);
+    b.ver = S.rb.ver + 1;
+    b.updatedAt = Date.now();
+    const r = await makeRoster(b);
+    applyRoster(r, parseRosterBody(r));
+    broadcastRoster();
+  }
+  function broadcastRoster() {
+    for (const d of otherDevices()) sendMsg(d.id, { t: 'roster', r: S.roster });
+  }
+  function selfRevoked() {
+    shutdownPeer();
+    remove(STORE_KEY); remove(LOCK_KEY);
+    S.store = null; S.priv = null; S.roster = null; S.rb = null; S.role = null;
+    show('welcomeView');
+    toast('この端末は、おうちの人の端末から登録を取り消されました', 8000);
+  }
 
   /* =========================================================
      表示
      ========================================================= */
-  const VIEWS = ['welcomeView', 'pinSetView', 'lockView', 'pairShowView', 'kidPairView', 'notifyView', 'homeView'];
+  const VIEWS = ['welcomeView', 'pinSetView', 'lockView', 'joinCodeView', 'joiningView', 'devicesView', 'addDeviceView', 'notifyView', 'homeView'];
   function show(view) { VIEWS.forEach(v => $(v).classList.toggle('hidden', v !== view)); }
   let toastTimer = null;
   function toast(msg, ms = 3500) {
@@ -498,10 +668,28 @@
     $('selfDot').className = 'dot ' + (state === 'on' ? 'on' : state === 'wait' ? 'wait' : '');
     $('selfStatus').textContent = text;
   }
-  function setOther(online) {
-    const name = S.role === 'parent' ? 'こどもの端末' : 'おうちの人の端末';
-    $('otherDot').className = 'dot ' + (online ? 'on' : '');
-    $('otherStatus').textContent = name + '：' + (online === null ? '確認中…' : online ? 'オンライン' : 'オフライン');
+  function setOnline(devId, v) {
+    const prev = S.online.get(devId);
+    S.online.set(devId, v);
+    if (prev !== v) {
+      document.querySelectorAll('[data-dot="' + devId + '"]').forEach(el => { el.className = 'dot ' + (v ? 'on' : ''); });
+      document.querySelectorAll('[data-st="' + devId + '"]').forEach(el => { el.textContent = v === null || v === undefined ? '確認中…' : v ? 'オンライン' : 'オフライン'; });
+    }
+  }
+  function el(tag, attrs = {}, text) {
+    const e = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === 'class') e.className = v; else if (k.startsWith('data-')) e.setAttribute(k, v); else e[k] = v;
+    }
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  function statusLine(devId) {
+    const v = S.online.get(devId);
+    const row = el('div', { class: 'status' });
+    row.appendChild(el('span', { class: 'dot ' + (v ? 'on' : ''), 'data-dot': devId }));
+    row.appendChild(el('span', { 'data-st': devId }, v === null || v === undefined ? '確認中…' : v ? 'オンライン' : 'オフライン'));
+    return row;
   }
 
   /* =========================================================
@@ -516,55 +704,24 @@
       document.body.innerHTML = '<div class="wrap"><h1>⚠ 読み込みエラー</h1><p class="lead">必要な部品を安全に読み込めませんでした。電波のよい場所で再読み込みしてください。</p></div>';
       return;
     }
+    const hash = location.hash;
+    // 招待の内容がアドレス履歴に残らないようにすぐ消す
+    if (hash) history.replaceState(null, '', location.pathname + location.search);
+    const cb = hash.match(/^#callback-([A-Z0-9]+)$/);
+    if (cb) S.callbackDev = cb[1];
+    const jm = hash.match(/^#join-(.+)$/);
 
-    // QRコードから開かれた場合（#pair-XXXX）
-    const m = location.hash.match(/^#pair-([A-Za-z0-9-]+)$/);
-    // 通知から開かれた場合（#callback）
-    if (location.hash === '#callback') S.callbackPending = true;
-    // 合鍵がアドレス履歴に残らないようにすぐ消す
-    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
-
-    const st = load(STORE_KEY);
-    if (m) { kidPairFromLink(m[1], st); return; }
-    if (!st) { show('welcomeView'); return; }
-    if (st.role === 'parent') { openLock(); return; }
-    if (st.role === 'kid') { startKid(st); return; }
+    S.store = load(STORE_KEY);
+    if (jm) { startJoinFromCode(decodeURIComponent(jm[1])); return; }
+    if (!S.store) { show('welcomeView'); return; }
+    if (S.store.role === 'parent') { openLock(); return; }
+    if (S.store.role === 'kid') { startKid(); return; }
     show('welcomeView');
   }
 
   /* =========================================================
-     おうちの人：初期設定・ロック
+     パスワード
      ========================================================= */
-  $('pickParent').addEventListener('click', () => {
-    $('inPin1').value = ''; $('inPin2').value = ''; $('pinSetErr').textContent = '';
-    show('pinSetView');
-  });
-  $('btnPinSetBack').addEventListener('click', () => show('welcomeView'));
-
-  $('btnPinSet').addEventListener('click', async () => {
-    const p1 = $('inPin1').value, p2 = $('inPin2').value;
-    const err = $('pinSetErr');
-    err.textContent = '';
-    const msg = checkPassword(p1);
-    if (msg) { err.textContent = msg; return; }
-    if (p1 !== p2) { err.textContent = '2回の入力が一致しません。'; return; }
-    $('btnPinSet').disabled = true; $('btnPinSet').textContent = '設定しています…';
-    try {
-      const secret = randBytes(20); // 160bit の合鍵
-      const encObj = await encryptSecret(secret, p1);
-      if (!save(STORE_KEY, { role: 'parent', enc: encObj })) throw new Error('save');
-      remove(LOCK_KEY);
-      $('inPin1').value = ''; $('inPin2').value = '';
-      await unlockedParent(secret);
-      showPairing();
-    } catch (e) {
-      err.textContent = '設定を保存できませんでした。プライベートブラウズを解除してからお試しください。';
-    } finally {
-      $('btnPinSet').disabled = false; $('btnPinSet').textContent = '決定';
-    }
-  });
-
-  // パスワードの強さを確認（問題なければ空文字を返す）
   function checkPassword(pw) {
     if (/\s/.test(pw)) return 'パスワードに空白は使えません。';
     if (pw.length > PIN_MAX) return `パスワードは${PIN_MAX}文字以内にしてください。`;
@@ -576,11 +733,77 @@
     if (['password', 'passw0rd', 'qwertyui', 'abcdefgh', 'mimamori'].includes(pw.toLowerCase())) return '推測されやすいパスワードは使えません。';
     return '';
   }
+  function checkName(n) {
+    if (!n) return '名前を入力してください。';
+    if (n.length > 12) return '名前は12文字以内にしてください。';
+    return '';
+  }
 
+  // パスワード設定画面（mode: 'create' 家族を作る / 'join' 追加してもらう）
+  let pinMode = null;
+  function openPinSet(mode) {
+    pinMode = mode;
+    $('nameField').classList.toggle('hidden', mode !== 'create');
+    $('inMyName').value = ''; $('inPin1').value = ''; $('inPin2').value = ''; $('pinSetErr').textContent = '';
+    show('pinSetView');
+  }
+  $('btnCreateFamily').addEventListener('click', () => openPinSet('create'));
+  $('btnPinSetBack').addEventListener('click', () => { S.pendingJoin = null; show('welcomeView'); });
+
+  $('btnPinSet').addEventListener('click', async () => {
+    const p1 = $('inPin1').value, p2 = $('inPin2').value;
+    const err = $('pinSetErr');
+    err.textContent = '';
+    let name = '';
+    if (pinMode === 'create') {
+      name = $('inMyName').value.trim();
+      const nm = checkName(name);
+      if (nm) { err.textContent = nm; return; }
+    }
+    const msg = checkPassword(p1);
+    if (msg) { err.textContent = msg; return; }
+    if (p1 !== p2) { err.textContent = '2回の入力が一致しません。'; return; }
+    $('btnPinSet').disabled = true; $('btnPinSet').textContent = '設定しています…';
+    try {
+      if (pinMode === 'create') await createFamily(name, p1);
+      else if (pinMode === 'join' && S.pendingJoin) { S.pendingJoin.pw = p1; runJoin(); }
+      $('inPin1').value = ''; $('inPin2').value = '';
+    } catch (e) {
+      err.textContent = '設定を保存できませんでした。プライベートブラウズを解除してからお試しください。';
+    } finally {
+      $('btnPinSet').disabled = false; $('btnPinSet').textContent = '決定';
+    }
+  });
+
+  async function createFamily(name, pw) {
+    const key = await genDeviceKey();
+    const deviceId = toB32(randBytes(6));
+    const topic = 'mmr-' + hex(randBytes(16));
+    S.deviceId = deviceId; S.role = 'parent'; S.name = name;
+    S.priv = await importPriv(key.privJwkStr);
+    const body = {
+      familyId: hex(randBytes(16)), ver: 1, updatedAt: Date.now(),
+      devices: [{ id: deviceId, name, role: 'parent', pub: key.pubStr, topic }],
+    };
+    S.rb = body;
+    const r = await makeRoster(body);
+    S.roster = r;
+    S.store = { v: 3, role: 'parent', deviceId, keyEnc: await encryptStr(key.privJwkStr, pw), roster: r };
+    if (!saveStore()) throw new Error('save');
+    remove(LOCK_KEY);
+    enterHome();
+    toast('家族を作りました。設定 →「登録している端末」から、こどもの端末を追加してください', 7000);
+  }
+
+  // ロック
   function lockState() { return load(LOCK_KEY) || { fails: 0, until: 0 }; }
   function waitText(ls) { return `しばらくお待ちください（${Math.ceil((ls.until - Date.now()) / 1000)}秒）`; }
   function openLock() {
     $('inUnlock').value = '';
+    const r = S.store && S.store.roster;
+    const b = r && parseRosterBody(r);
+    const me = b && b.devices.find(d => d.id === S.store.deviceId);
+    $('lockName').textContent = me ? `「${me.name}」の端末` : '';
     const ls = lockState();
     $('lockErr').textContent = ls.until > Date.now() ? waitText(ls) : '';
     show('lockView');
@@ -599,11 +822,12 @@
     $('btnUnlock').disabled = true;
     $('lockErr').textContent = '確認しています…';
     try {
-      const secret = await decryptSecret(st.enc, pw);
+      const privStr = await decryptStr(st.keyEnc, pw);
       remove(LOCK_KEY);
       $('inUnlock').value = '';
       $('lockErr').textContent = '';
-      await unlockedParent(secret);
+      S.store = st;
+      await loadIdentity(privStr);
       enterHome();
     } catch (e) {
       $('inUnlock').value = '';
@@ -622,86 +846,307 @@
   $('btnUnlock').addEventListener('click', tryUnlock);
   $('inUnlock').addEventListener('keydown', (e) => { if (e.key === 'Enter') tryUnlock(); });
   $('btnForgot').addEventListener('click', async () => {
-    const ok = await confirmDialog('この端末の設定をすべて消して、最初からやり直します。\nこどもの端末も登録し直しが必要です。よろしいですか？', '初期化する');
-    if (!ok) return;
-    wipeAll();
+    const ok = await confirmDialog('この端末の設定をすべて消して、最初からやり直します。\nほかのおうちの人の端末から追加し直してください。\n（ほかに登録済みのおうちの人の端末がない場合は、こどもの端末も登録し直しになります）', '初期化する');
+    if (ok) wipeAll();
   });
 
-  async function unlockedParent(secret) {
-    S.role = 'parent';
-    S.secret = secret;
-    const d = await deriveFromSecret(secret);
-    S.authKey = d.authKey; S.myId = d.parentId; S.otherId = d.kidId; S.ntfyTopic = d.topic;
+  async function loadIdentity(privStr) {
+    const r = S.store.roster;
+    const b = parseRosterBody(r);
+    if (!b) throw new Error('roster');
+    S.roster = r; S.rb = b; S.pubCache.clear();
+    S.deviceId = S.store.deviceId;
+    const me = devById(S.deviceId);
+    if (!me) throw new Error('me');
+    S.role = me.role; S.name = me.name;
+    S.priv = await importPriv(privStr);
+    S.watchAllowed = S.store.watchAllowed !== false;
   }
 
-  function showPairing() {
-    const code = toB32(S.secret);
-    const url = location.origin + location.pathname + '#pair-' + code;
+  async function startKid() {
+    try { await loadIdentity(S.store.privJwkStr); }
+    catch (e) { remove(STORE_KEY); show('welcomeView'); return; }
+    enterHome();
+  }
+
+  /* =========================================================
+     端末を追加してもらう（新しい端末の側）
+     ========================================================= */
+  $('btnJoinByCode').addEventListener('click', () => { $('inJoinCode').value = ''; $('joinCodeErr').textContent = ''; show('joinCodeView'); });
+  $('btnJoinCodeBack').addEventListener('click', () => show('welcomeView'));
+  $('btnJoinCode').addEventListener('click', () => {
+    const code = $('inJoinCode').value.trim();
+    if (!parseJoinCode(code)) { $('joinCodeErr').textContent = '登録コードが正しくありません。もう一度確認してください。'; return; }
+    $('inJoinCode').value = '';
+    startJoinFromCode(code);
+  });
+  $('btnJoiningBack').addEventListener('click', () => { cleanupJoin(); show(S.store ? 'welcomeView' : 'welcomeView'); });
+
+  // 登録コード：<P|K>.<招待トークン>.<家族ID>.<招待した端末ID>
+  function parseJoinCode(code) {
+    const m = (code || '').trim().match(/^([PK])\.([A-Z2-9]{32})\.([0-9a-f]{32})\.([A-Z2-9]{10})$/);
+    if (!m) return null;
+    const token = fromB32(m[2]);
+    if (!token || token.length !== 20) return null;
+    return { role: m[1] === 'P' ? 'parent' : 'kid', token, familyId: m[3], inviter: m[4] };
+  }
+
+  async function startJoinFromCode(code) {
+    const j = parseJoinCode(code);
+    if (!j) { toast('登録用のリンクが正しくありません'); routeAfterCancel(); return; }
+    if (S.store) {
+      const ok = await confirmDialog('この端末はすでに登録されています。\n今の登録を消して、新しく登録し直しますか？', '登録し直す');
+      if (!ok) { routeAfterCancel(); return; }
+      shutdownPeer();
+      remove(STORE_KEY); remove(LOCK_KEY); S.store = null;
+    } else {
+      const ok = await confirmDialog(`この端末を「${j.role === 'parent' ? 'おうちの人' : 'こども'}の端末」として家族に登録しますか？\n（家族のQRコードから開いた場合のみ「登録する」を押してください）`, '登録する');
+      if (!ok) { show('welcomeView'); return; }
+    }
+    S.pendingJoin = j;
+    if (j.role === 'parent') { openPinSet('join'); return; }
+    runJoin();
+  }
+  function routeAfterCancel() {
+    if (!S.store) { show('welcomeView'); return; }
+    if (S.store.role === 'parent') openLock(); else startKid();
+  }
+
+  let joinPeer = null;
+  function cleanupJoin() {
+    if (joinPeer) { try { joinPeer.destroy(); } catch (e) {} }
+    joinPeer = null;
+  }
+  async function runJoin() {
+    const j = S.pendingJoin;
+    if (!j) return;
+    show('joiningView');
+    $('joiningErr').textContent = '';
+    $('btnJoiningBack').classList.add('hidden');
+    const fail = (msg) => {
+      cleanupJoin();
+      S.pendingJoin = null;
+      $('joiningErr').textContent = msg;
+      $('btnJoiningBack').classList.remove('hidden');
+    };
+    try {
+      if (j.role === 'kid') {
+        // こどもの端末はカメラ・マイクの許可を先に取っておく（自動応答のため）
+        try { const s = await navigator.mediaDevices.getUserMedia({ audio: true, video: true }); s.getTracks().forEach(t => t.stop()); }
+        catch (e) { toast('カメラ・マイクの使用を許可してください', 5000); }
+      }
+      const key = await genDeviceKey();
+      const deviceId = toB32(randBytes(6));
+      const topic = j.role === 'parent' ? 'mmr-' + hex(randBytes(16)) : '';
+      const tokenKey = await hmacKey(j.token);
+      const inviterPeer = ID_PREFIX + j.familyId + '-' + j.inviter;
+
+      cleanupJoin();
+      joinPeer = new Peer(JOIN_PREFIX + randId().toLowerCase(), { debug: 0 });
+      const timer = setTimeout(() => fail('登録できませんでした。QRコードの有効期限（10分）が切れていないか、表示している端末の画面が開いたままか確認して、もう一度お試しください。'), 30000);
+      joinPeer.on('error', (e) => {
+        if (e && e.type === 'peer-unavailable') { clearTimeout(timer); fail('QRコードを表示している端末が見つかりません。その端末の画面を開いたまま、もう一度お試しください。'); }
+      });
+      joinPeer.on('open', () => {
+        const conn = joinPeer.connect(inviterPeer, { reliable: true, metadata: { join: 1 } });
+        conn.on('open', async () => {
+          const fps = await connFingerprints(conn);
+          if (!fps) { clearTimeout(timer); fail('安全な接続を確認できませんでした。'); return; }
+          const roleCh = j.role === 'parent' ? 'P' : 'K';
+          const text = `join-req|${roleCh}|${deviceId}|${key.pubStr}|${topic}|${fps.init}|${fps.resp}`;
+          conn.send({ t: 'join-req', role: roleCh, id: deviceId, pub: key.pubStr, topic, mac: await hmacSign(tokenKey, text) });
+          conn.on('data', async (d) => {
+            if (!d || d.t !== 'join-ok') return;
+            clearTimeout(timer);
+            const okText = `join-ok|${deviceId}|${roleCh}|${d.name}|${d.roster && d.roster.bodyStr}|${fps.init}|${fps.resp}`;
+            if (!(await hmacVerify(tokenKey, okText, d.mac))) { fail('安全な接続を確認できませんでした。'); return; }
+            const b = parseRosterBody(d.roster);
+            const me = b && b.devices.find(x => x.id === deviceId);
+            const inv = b && b.devices.find(x => x.id === j.inviter);
+            if (!b || b.familyId !== j.familyId || !me || me.pub !== key.pubStr || me.role !== j.role || !inv || inv.role !== 'parent' || d.roster.signer !== j.inviter) {
+              fail('登録内容を確認できませんでした。'); return;
+            }
+            const invKey = await crypto.subtle.importKey('jwk', JSON.parse(inv.pub), ECDSA, false, ['verify']);
+            if (!(await ecVerifyWith(invKey, d.roster.bodyStr, d.roster.sig))) { fail('登録内容を確認できませんでした。'); return; }
+            // 保存
+            const st = { v: 3, role: j.role, deviceId, roster: d.roster };
+            if (j.role === 'parent') st.keyEnc = await encryptStr(key.privJwkStr, j.pw);
+            else { st.privJwkStr = key.privJwkStr; st.watchAllowed = true; }
+            S.store = st;
+            if (!saveStore()) { fail('保存できませんでした。プライベートブラウズを解除してください。'); return; }
+            try { conn.close(); } catch (e) {}
+            cleanupJoin();
+            S.pendingJoin = null;
+            await loadIdentity(key.privJwkStr);
+            enterHome();
+            toast(`「${me.name}」として登録しました`, 5000);
+          });
+        });
+      });
+    } catch (e) { fail('登録できませんでした。もう一度お試しください。'); }
+  }
+
+  /* =========================================================
+     端末を追加する（おうちの人の側）
+     ========================================================= */
+  document.querySelectorAll('[data-addrole]').forEach(t => t.addEventListener('click', () => {
+    S.addRole = t.getAttribute('data-addrole');
+    document.querySelectorAll('[data-addrole]').forEach(x => x.classList.toggle('sel', x === t));
+  }));
+  $('btnAddDevice').addEventListener('click', () => {
+    S.addRole = null;
+    document.querySelectorAll('[data-addrole]').forEach(x => x.classList.remove('sel'));
+    $('inAddName').value = ''; $('addErr').textContent = '';
+    $('addForm').classList.remove('hidden'); $('addShow').classList.add('hidden');
+    show('addDeviceView');
+  });
+  $('btnAddBack').addEventListener('click', () => openDevices());
+  $('btnMakeInvite').addEventListener('click', () => {
+    const name = $('inAddName').value.trim();
+    if (!S.addRole) { $('addErr').textContent = '追加する端末の種類を選んでください。'; return; }
+    const nm = checkName(name);
+    if (nm) { $('addErr').textContent = nm; return; }
+    if (S.rb.devices.some(d => d.name === name)) { $('addErr').textContent = '同じ名前の端末があります。別の名前にしてください。'; return; }
+    const token = randBytes(20);
+    const tokenB32 = toB32(token);
+    const inv = { token, role: S.addRole, name, exp: Date.now() + INVITE_TTL_MS, key: null };
+    S.invites.clear();
+    S.invites.set(tokenB32, inv);
+    const code = `${S.addRole === 'parent' ? 'P' : 'K'}.${tokenB32}.${S.rb.familyId}.${S.deviceId}`;
+    const url = location.origin + location.pathname + '#join-' + code;
     const qr = qrcode(0, 'M');
     qr.addData(url);
     qr.make();
-    $('qrImg').src = qr.createDataURL(8, 4);
-    $('pairCode').textContent = groupCode(code);
-    show('pairShowView');
-  }
-  $('btnPairDone').addEventListener('click', () => {
-    $('qrImg').removeAttribute('src');
-    $('pairCode').textContent = '';
-    enterHome();
+    $('qrImg').src = qr.createDataURL(6, 4);
+    $('inviteCode').textContent = code;
+    $('addTarget').textContent = `追加する端末：${S.addRole === 'parent' ? 'おうちの人' : 'こども'}「${name}」`;
+    $('addForm').classList.add('hidden'); $('addShow').classList.remove('hidden');
+    clearInterval(S.inviteTimer);
+    const tick = () => {
+      const left = inv.exp - Date.now();
+      if (left <= 0 || !S.invites.has(tokenB32)) { closeInvite(left <= 0 ? '招待の有効期限が切れました' : ''); return; }
+      $('inviteTimer').textContent = `のこり ${Math.floor(left / 60000)}分${String(Math.floor(left / 1000) % 60).padStart(2, '0')}秒`;
+    };
+    tick();
+    S.inviteTimer = setInterval(tick, 1000);
   });
+  $('btnInviteCancel').addEventListener('click', () => closeInvite(''));
+  function closeInvite(msg) {
+    clearInterval(S.inviteTimer);
+    S.invites.clear();
+    $('qrImg').removeAttribute('src');
+    $('inviteCode').textContent = '';
+    if (msg) toast(msg);
+    if (!$('addDeviceView').classList.contains('hidden')) openDevices();
+  }
+
+  // 新しい端末からの参加申し込みを処理する
+  function handleJoinConn(conn) {
+    if (S.role !== 'parent' || S.invites.size === 0) { try { conn.close(); } catch (e) {} return; }
+    let handled = false;
+    const kill = setTimeout(() => { try { conn.close(); } catch (e) {} }, 30000);
+    conn.on('data', async (d) => {
+      if (handled || !d || d.t !== 'join-req') return;
+      handled = true;
+      const fps = await connFingerprints(conn);
+      if (!fps) { conn.close(); return; }
+      const text = `join-req|${d.role}|${d.id}|${d.pub}|${d.topic}|${fps.init}|${fps.resp}`;
+      let found = null, foundKey = null, foundB32 = null;
+      for (const [b32, inv] of S.invites) {
+        if (inv.exp < Date.now()) continue;
+        const k = await hmacKey(inv.token);
+        if (await hmacVerify(k, text, d.mac)) { found = inv; foundKey = k; foundB32 = b32; break; }
+      }
+      const role = d.role === 'P' ? 'parent' : d.role === 'K' ? 'kid' : null;
+      if (!found || role !== found.role || typeof d.id !== 'string' || !/^[A-Z2-9]{10}$/.test(d.id) || devById(d.id)) {
+        noteAuthFail('招待の確認に失敗'); try { conn.close(); } catch (e) {} return;
+      }
+      try {
+        const pj = JSON.parse(d.pub);
+        await crypto.subtle.importKey('jwk', pj, ECDSA, false, ['verify']);
+      } catch (e) { try { conn.close(); } catch (e2) {} return; }
+      if (role === 'parent' && !/^mmr-[0-9a-f]{32}$/.test(d.topic || '')) { try { conn.close(); } catch (e) {} return; }
+      S.invites.delete(foundB32); // 招待は1回だけ
+      const entry = { id: d.id, name: found.name, role, pub: d.pub };
+      if (role === 'parent') entry.topic = d.topic;
+      await updateRoster(b => { b.devices.push(entry); });
+      const okText = `join-ok|${d.id}|${d.role}|${found.name}|${S.roster.bodyStr}|${fps.init}|${fps.resp}`;
+      conn.send({ t: 'join-ok', name: found.name, roster: S.roster, mac: await hmacSign(foundKey, okText) });
+      setTimeout(() => { clearTimeout(kill); try { conn.close(); } catch (e) {} }, 3000);
+      clearInterval(S.inviteTimer);
+      $('qrImg').removeAttribute('src');
+      $('inviteCode').textContent = '';
+      toast(`「${found.name}」を登録しました`, 5000);
+      openDevices();
+      setTimeout(() => checkPresence(), 4000);
+    });
+  }
 
   /* =========================================================
-     こども：登録
+     端末の一覧（追加・取り消し）
      ========================================================= */
-  $('pickKid').addEventListener('click', () => {
-    $('inPairCode').value = ''; $('kidPairErr').textContent = '';
-    show('kidPairView');
-  });
-  $('btnKidPairBack').addEventListener('click', () => show('welcomeView'));
-  $('btnKidPair').addEventListener('click', () => {
-    const bytes = fromB32($('inPairCode').value);
-    if (!bytes || bytes.length !== 20) { $('kidPairErr').textContent = '登録コードが正しくありません。もう一度確認してください。'; return; }
-    registerKid(bytes);
-  });
-
-  async function kidPairFromLink(code, st) {
-    const bytes = fromB32(code);
-    if (!bytes || bytes.length !== 20) { toast('登録用のリンクが正しくありません'); show('welcomeView'); return; }
-    if (st && st.role === 'parent') {
-      toast('この端末はおうちの人の端末として設定済みです');
-      openLock();
-      return;
+  $('btnDevices').addEventListener('click', () => openDevices());
+  $('btnDevicesBack').addEventListener('click', () => enterHome());
+  function openDevices() { renderDevices(); show('devicesView'); }
+  function renderDevices() {
+    const box = $('devList');
+    box.innerHTML = '';
+    const list = [...S.rb.devices].sort((a, b) => (a.role === b.role ? 0 : a.role === 'parent' ? -1 : 1));
+    for (const d of list) {
+      const card = el('div', { class: 'card devcard' });
+      const head = el('div', { class: 'devhead' });
+      head.appendChild(el('div', { class: 'devname' }, (d.role === 'parent' ? '🧑 ' : '🧒 ') + d.name + (d.id === S.deviceId ? '（この端末）' : '')));
+      head.appendChild(el('div', { class: 'devrole' }, d.role === 'parent' ? 'おうちの人' : 'こども'));
+      card.appendChild(head);
+      if (d.id !== S.deviceId) {
+        card.appendChild(statusLine(d.id));
+        const b = el('button', { class: 'btn danger small' }, '取り消す');
+        b.addEventListener('click', () => revokeDevice(d.id));
+        card.appendChild(b);
+      }
+      box.appendChild(card);
     }
-    const ok = await confirmDialog('この端末を「こどもの端末」として登録しますか？\n（おうちの人のQRコードから開いた場合のみ「登録する」を押してください）', '登録する');
-    if (!ok) { if (st && st.role === 'kid') startKid(st); else show('welcomeView'); return; }
-    registerKid(bytes);
   }
-
-  async function registerKid(bytes) {
-    // こどもの端末は無人で待ち受けるため、合鍵をこの端末内に保存する
-    const st = { role: 'kid', secret: toB32(bytes), watchAllowed: true };
-    if (!save(STORE_KEY, st)) { toast('保存できませんでした。プライベートブラウズを解除してください'); return; }
-    $('inPairCode').value = '';
-    // カメラ・マイクの許可を先に取っておく（自動応答のため）
+  async function revokeDevice(id) {
+    const d = devById(id);
+    if (!d) return;
+    if (d.role === 'parent' && S.rb.devices.filter(x => x.role === 'parent').length <= 1) { toast('おうちの人の端末を0台にはできません'); return; }
+    const ok = await confirmDialog(`「${d.name}」の登録を取り消します。\nこの端末はつながらなくなります（なくした端末にも有効です）。よろしいですか？`, '取り消す');
+    if (!ok) return;
+    const pw = await askPassword();
+    if (!pw) return;
+    await updateRoster(b => { b.devices = b.devices.filter(x => x.id !== id); });
+    // 取り消した端末にも知らせる（届けば自動で初期化される）
+    sendRosterTo(id, S.roster);
+    toast(`「${d.name}」を取り消しました`);
+    renderDevices();
+  }
+  function sendRosterTo(devIdGone, roster) {
+    if (!S.peer || !S.peer.open) return;
     try {
-      const s = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-      s.getTracks().forEach(t => t.stop());
-    } catch (e) {
-      toast('カメラ・マイクの使用を許可してください（設定アプリ → Safari → カメラ／マイク）', 6000);
-    }
-    toast('登録しました');
-    startKid(st);
+      const conn = S.peer.connect(ID_PREFIX + S.rb.familyId + '-' + devIdGone, { reliable: true });
+      conn.on('open', () => { try { conn.send({ t: 'roster', r: roster }); } catch (e) {} setTimeout(() => { try { conn.close(); } catch (e) {} }, 3000); });
+    } catch (e) {}
   }
-
-  async function startKid(st) {
-    const secret = fromB32(st.secret || '');
-    if (!secret || secret.length !== 20) { remove(STORE_KEY); show('welcomeView'); return; }
-    S.role = 'kid';
-    S.secret = secret;
-    S.watchAllowed = st.watchAllowed !== false;
-    const d = await deriveFromSecret(secret);
-    S.authKey = d.authKey; S.myId = d.kidId; S.otherId = d.parentId; S.ntfyTopic = d.topic;
-    enterHome();
+  // 大事な操作の前にパスワードを入力し直してもらう
+  function askPassword() {
+    return new Promise((resolve) => {
+      $('dlgMsg').textContent = '';
+      const wrap = document.createElement('div');
+      wrap.appendChild(el('div', { style: 'margin-bottom:8px' }, '確認のためパスワードを入力してください'));
+      const inp = el('input', { type: 'password', autocomplete: 'current-password', autocapitalize: 'off', maxLength: 64 });
+      wrap.appendChild(inp);
+      $('dlgMsg').appendChild(wrap);
+      $('dlgOk').textContent = '確認';
+      $('dialog').classList.remove('hidden');
+      setTimeout(() => inp.focus(), 50);
+      const done = (v) => { $('dialog').classList.add('hidden'); $('dlgOk').onclick = null; $('dlgCancel').onclick = null; resolve(v); };
+      $('dlgCancel').onclick = () => done(null);
+      $('dlgOk').onclick = async () => {
+        try { await decryptStr(S.store.keyEnc, inp.value); done(inp.value); }
+        catch (e) { toast('パスワードが違います'); done(null); }
+      };
+    });
   }
 
   /* =========================================================
@@ -710,17 +1155,59 @@
   function enterHome() {
     const isKid = S.role === 'kid';
     $('roleIcon').textContent = isKid ? '🧒' : '🧑';
-    $('roleName').textContent = isKid ? 'こどもの端末' : 'おうちの人の端末';
+    $('myNameLabel').textContent = S.name;
+    $('roleLabel').textContent = isKid ? 'こどもの端末' : 'おうちの人の端末';
     $('parentPanel').classList.toggle('hidden', isKid);
     $('kidPanel').classList.toggle('hidden', !isKid);
     $('parentMenu').classList.add('hidden');
     $('kidMenu').classList.add('hidden');
     $('inWatchAllowed').checked = S.watchAllowed;
-    $('callbackBanner').classList.toggle('hidden', !(S.callbackPending && !isKid));
-    setOther(null);
+    renderHome();
     show('homeView');
     requestWakeLock();
     if (!S.peer || S.peer.destroyed) startPeer();
+  }
+  function renderHome() {
+    $('myNameLabel').textContent = S.name;
+    if (S.role === 'parent') {
+      const box = $('kidList');
+      box.innerHTML = '';
+      const kids = counterparts();
+      if (!kids.length) {
+        const c = el('div', { class: 'card' });
+        c.appendChild(el('p', { class: 'note' }, 'こどもの端末がまだ登録されていません。右上の「設定」→「登録している端末」→「＋ 端末を追加」から登録してください。'));
+        box.appendChild(c);
+      }
+      for (const k of kids) {
+        const c = el('div', { class: 'card devcard' });
+        c.appendChild(el('div', { class: 'devname' }, '🧒 ' + k.name));
+        c.appendChild(statusLine(k.id));
+        const row = el('div', { class: 'btnrow' });
+        const w = el('button', { class: 'btn' }, '👀 見守る');
+        w.addEventListener('click', () => { unlockAudio(); startCall('watch', k.id); });
+        const v = el('button', { class: 'btn sub' }, '📹 通話');
+        v.addEventListener('click', () => { unlockAudio(); startCall('call', k.id); });
+        row.appendChild(w); row.appendChild(v);
+        c.appendChild(row);
+        box.appendChild(c);
+      }
+      const cbd = S.callbackDev && devById(S.callbackDev);
+      $('callbackBanner').classList.toggle('hidden', !(cbd && cbd.role === 'kid'));
+      if (cbd) $('callbackText').textContent = `📞 「${cbd.name}」から呼び出しがありました。`;
+    } else {
+      const box = $('parentList');
+      box.innerHTML = '';
+      const ps = counterparts();
+      for (const p of ps) {
+        const b = el('button', { class: 'btn big callbtn' });
+        b.appendChild(el('span', {}, '📞 ' + p.name + 'に電話'));
+        const st = el('span', { class: 'mini' });
+        st.appendChild(el('span', { class: 'dot ' + (S.online.get(p.id) ? 'on' : ''), 'data-dot': p.id }));
+        b.appendChild(st);
+        b.addEventListener('click', () => { unlockAudio(); startRingSession(p.id); });
+        box.appendChild(b);
+      }
+    }
   }
 
   // 設定メニュー：こどもの端末では長押し（3秒）で開く
@@ -738,53 +1225,15 @@
   $('btnMenu').addEventListener('mousedown', startPress);
   ['touchend', 'touchcancel', 'mouseup', 'mouseleave'].forEach(ev => $('btnMenu').addEventListener(ev, endPress));
 
-  $('btnShowPair').addEventListener('click', () => { if (S.secret) showPairing(); });
-  $('btnRepair').addEventListener('click', async () => {
-    const ok = await confirmDialog('新しい合鍵を作り直します。\nいま登録されているこどもの端末はつながらなくなるので、もう一度QRコードで登録してください。\n（端末をなくした・合鍵を見られたかもしれない時に使います）', '作り直す');
-    if (!ok) return;
-    const pinOk = await askPinAgain();
-    if (!pinOk) return;
-    try {
-      const secret = randBytes(20);
-      const encObj = await encryptSecret(secret, pinOk);
-      save(STORE_KEY, { role: 'parent', enc: encObj });
-      shutdownPeer();
-      await unlockedParent(secret);
-      showPairing();
-    } catch (e) { toast('作り直しに失敗しました'); }
-  });
   $('btnLockNow').addEventListener('click', () => lockNow());
   $('btnWipe').addEventListener('click', async () => {
-    const ok = await confirmDialog('この端末の設定をすべて消します。よろしいですか？', '消す');
+    const ok = await confirmDialog('この端末の設定をすべて消します。\nほかの端末の一覧からも「取り消す」で外しておいてください。よろしいですか？', '消す');
     if (ok) wipeAll();
   });
   $('btnKidUnpair').addEventListener('click', async () => {
-    const ok = await confirmDialog('この端末の登録を解除します。もう一度使うには、おうちの人のQRコードで登録し直す必要があります。', '解除する');
+    const ok = await confirmDialog('この端末の登録を解除します。もう一度使うには、おうちの人の端末から追加し直す必要があります。', '解除する');
     if (ok) wipeAll();
   });
-
-  // 再設定の前にパスワードを入力し直してもらう
-  async function askPinAgain() {
-    return new Promise((resolve) => {
-      $('dlgMsg').textContent = '';
-      const wrap = document.createElement('div');
-      wrap.innerHTML = '<div style="margin-bottom:8px">確認のためパスワードを入力してください</div>';
-      const inp = document.createElement('input');
-      inp.type = 'password'; inp.autocomplete = 'current-password'; inp.autocapitalize = 'off'; inp.maxLength = 64;
-      wrap.appendChild(inp);
-      $('dlgMsg').appendChild(wrap);
-      $('dlgOk').textContent = '確認';
-      $('dialog').classList.remove('hidden');
-      setTimeout(() => inp.focus(), 50);
-      const done = (v) => { $('dialog').classList.add('hidden'); $('dlgOk').onclick = null; $('dlgCancel').onclick = null; resolve(v); };
-      $('dlgCancel').onclick = () => done(null);
-      $('dlgOk').onclick = async () => {
-        const st = load(STORE_KEY);
-        try { await decryptSecret(st.enc, inp.value); done(inp.value); }
-        catch (e) { toast('パスワードが違います'); done(null); }
-      };
-    });
-  }
 
   function shutdownPeer() {
     stopRingSession();
@@ -792,136 +1241,42 @@
     stopPresence();
     if (S.peer) { try { S.peer.destroy(); } catch (e) {} }
     S.peer = null;
+    S.online.clear();
   }
   function lockNow() {
     shutdownPeer();
     releaseWakeLock();
-    S.secret = null; S.authKey = null; S.myId = ''; S.otherId = '';
+    closeInvite('');
+    S.priv = null;
     openLock();
   }
   function wipeAll() {
     shutdownPeer();
     releaseWakeLock();
     remove(STORE_KEY); remove(LOCK_KEY);
-    S.secret = null; S.authKey = null; S.role = null;
+    S.store = null; S.priv = null; S.roster = null; S.rb = null; S.role = null;
     show('welcomeView');
   }
 
   $('inWatchAllowed').addEventListener('change', (e) => {
     S.watchAllowed = e.target.checked;
-    const cur = load(STORE_KEY);
-    if (cur && cur.role === 'kid') { cur.watchAllowed = S.watchAllowed; save(STORE_KEY, cur); }
+    if (S.store && S.store.role === 'kid') { S.store.watchAllowed = S.watchAllowed; saveStore(); }
     toast(S.watchAllowed ? '見守りモードをオンにしました' : '見守りモードをオフにしました（呼び出し音が鳴ります）');
   });
 
-  $('btnWatch').addEventListener('click', () => { unlockAudio(); startCall('watch'); });
-  $('btnCallKid').addEventListener('click', () => { unlockAudio(); startCall('call'); });
-  $('btnCallParent').addEventListener('click', () => { unlockAudio(); startRingSession(); });
   $('btnCallback').addEventListener('click', () => {
     unlockAudio();
-    S.callbackPending = false;
+    const id = S.callbackDev;
+    S.callbackDev = null;
     $('callbackBanner').classList.add('hidden');
-    startCall('call');
+    if (id && devById(id)) startCall('call', id);
   });
-
-  /* =========================================================
-     通知（ntfy）
-     ========================================================= */
-  $('btnNotifySetup').addEventListener('click', () => {
-    if (!S.ntfyTopic) return;
-    $('ntfyTopic').textContent = S.ntfyTopic;
-    show('notifyView');
-  });
-  $('btnNotifyBack').addEventListener('click', () => { $('ntfyTopic').textContent = ''; enterHome(); });
-  $('btnCopyTopic').addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText(S.ntfyTopic); toast('コピーしました'); }
-    catch (e) { toast('コピーできませんでした。名前を長押ししてコピーしてください'); }
-  });
-  $('btnTestNotify').addEventListener('click', async () => {
-    const ok = await sendNtfy('みまもり：テスト通知', 'このように通知が届きます。タップするとアプリが開きます。', 3);
-    toast(ok ? 'テスト通知を送りました。届いたか確認してください' : '送れませんでした。電波を確認してください');
-  });
-
-  // 通知の文面には個人情報や合鍵を一切含めない
-  async function sendNtfy(title, message, priority = 5) {
-    if (!S.ntfyTopic) return false;
-    const body = JSON.stringify({
-      topic: S.ntfyTopic,
-      title, message, priority,
-      tags: ['telephone_receiver'],
-      click: location.origin + location.pathname + '#callback',
-    });
-    try {
-      // Content-Type を付けない（text/plain 扱い）ことで、余分な事前確認通信を発生させない
-      const res = await fetch(NTFY_URL, { method: 'POST', body, mode: 'cors', credentials: 'omit', referrerPolicy: 'no-referrer' });
-      return res.ok;
-    } catch (e) { return false; }
-  }
-
-  /* =========================================================
-     こどもからの呼び出し（通知を送りながら、おうちの人がアプリを開くのを待つ）
-     ========================================================= */
-  function startRingSession() {
-    if (S.ring || S.call || S.incoming) return;
-    S.ring = { started: Date.now(), sent: 0, probing: false, notifyTimer: null, tryTimer: null };
-    showRingDialing();
-    startRing('back');
-    ringNotify();
-    S.ring.notifyTimer = setInterval(ringNotify, NOTIFY_INTERVAL_MS);
-    S.ring.tryTimer = setInterval(ringTick, RING_PROBE_MS);
-    ringTick();
-  }
-  function showRingDialing() {
-    $('dlTitle').textContent = 'おうちの人を呼び出しています…';
-    $('dlSub').textContent = 'アプリを閉じていても、通知でお知らせしています';
-    $('dialingView').classList.remove('hidden');
-  }
-  async function ringNotify() {
-    const r = S.ring;
-    if (!r || r.sent >= NOTIFY_MAX) return;
-    r.sent++;
-    await sendNtfy('📞 みまもり：こどもから呼び出し', 'タップしてアプリを開いてください（' + r.sent + '回目）', 5);
-  }
-  async function ringTick() {
-    const r = S.ring;
-    if (!r) return;
-    if (Date.now() - r.started > RING_SESSION_MS) {
-      stopRingSession();
-      endCall('おうちの人は出られませんでした（通知は送ってあります）', true);
-      return;
-    }
-    if (S.call || r.probing || !S.peer || !S.peer.open) return;
-    r.probing = true;
-    const online = await probeOther(3500);
-    if (S.ring !== r) return;
-    r.probing = false;
-    if (online && !S.call) startCall('call');
-  }
-  function stopRingSession() {
-    const r = S.ring;
-    if (!r) return;
-    clearInterval(r.notifyTimer);
-    clearInterval(r.tryTimer);
-    S.ring = null;
-  }
-  // 相手がオンラインかを短時間で確かめる
-  function probeOther(timeoutMs) {
-    return new Promise((resolve) => {
-      let done = false, conn;
-      const fin = (v) => { if (done) return; done = true; try { conn && conn.close(); } catch (e) {} resolve(v); };
-      try { conn = S.peer.connect(S.otherId, { reliable: true }); } catch (e) { return resolve(false); }
-      if (!conn) return resolve(false);
-      conn.on('open', () => { setOther(true); fin(true); });
-      conn.on('error', () => fin(false));
-      setTimeout(() => fin(false), timeoutMs);
-    });
-  }
 
   // おうちの人の端末は、裏に回って5分たったら自動でロック
   let hiddenAt = 0;
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); return; }
-    if (S.role === 'parent' && S.secret && hiddenAt && Date.now() - hiddenAt > 5 * 60 * 1000 && !S.call) {
+    if (S.role === 'parent' && S.priv && hiddenAt && Date.now() - hiddenAt > 5 * 60 * 1000 && !S.call) {
       lockNow();
       return;
     }
@@ -934,12 +1289,101 @@
   });
 
   /* =========================================================
+     通知（ntfy）
+     ========================================================= */
+  $('btnNotifySetup').addEventListener('click', () => {
+    const me = devById(S.deviceId);
+    if (!me || !me.topic) return;
+    $('ntfyTopic').textContent = me.topic;
+    show('notifyView');
+  });
+  $('btnNotifyBack').addEventListener('click', () => { $('ntfyTopic').textContent = ''; enterHome(); });
+  $('btnCopyTopic').addEventListener('click', async () => {
+    const me = devById(S.deviceId);
+    try { await navigator.clipboard.writeText(me.topic); toast('コピーしました'); }
+    catch (e) { toast('コピーできませんでした。名前を長押ししてコピーしてください'); }
+  });
+  $('btnTestNotify').addEventListener('click', async () => {
+    const me = devById(S.deviceId);
+    const ok = await sendNtfy(me.topic, 'みまもり：テスト通知', 'このように通知が届きます。タップするとアプリが開きます。', 3, '');
+    toast(ok ? 'テスト通知を送りました。届いたか確認してください' : '送れませんでした。電波を確認してください');
+  });
+
+  // 通知の文面には個人情報や鍵を一切含めない
+  async function sendNtfy(topic, title, message, priority, clickHash) {
+    if (!topic) return false;
+    const body = JSON.stringify({
+      topic, title, message, priority,
+      tags: ['telephone_receiver'],
+      click: location.origin + location.pathname + (clickHash || ''),
+    });
+    try {
+      // Content-Type を付けない（text/plain 扱い）ことで、余分な事前確認通信を発生させない
+      const res = await fetch(NTFY_URL, { method: 'POST', body, mode: 'cors', credentials: 'omit', referrerPolicy: 'no-referrer' });
+      return res.ok;
+    } catch (e) { return false; }
+  }
+
+  /* =========================================================
+     こどもからの呼び出し（通知を送りながら、おうちの人がアプリを開くのを待つ）
+     ========================================================= */
+  function startRingSession(parentId) {
+    if (S.ring || S.call || S.incoming) return;
+    const p = devById(parentId);
+    if (!p) return;
+    S.ring = { target: parentId, started: Date.now(), sent: 0, probing: false, notifyTimer: null, tryTimer: null };
+    showRingDialing();
+    startRing('back');
+    ringNotify();
+    S.ring.notifyTimer = setInterval(ringNotify, NOTIFY_INTERVAL_MS);
+    S.ring.tryTimer = setInterval(ringTick, RING_PROBE_MS);
+    ringTick();
+  }
+  function showRingDialing() {
+    if (!S.ring) return;
+    $('dlTitle').textContent = `${nameOf(S.ring.target)}を呼び出しています…`;
+    $('dlSub').textContent = 'アプリを閉じていても、通知でお知らせしています';
+    $('dialingView').classList.remove('hidden');
+  }
+  async function ringNotify() {
+    const r = S.ring;
+    if (!r || r.sent >= NOTIFY_MAX) return;
+    const p = devById(r.target);
+    if (!p) return;
+    r.sent++;
+    await sendNtfy(p.topic, `📞 みまもり：${S.name}から呼び出し`, 'タップしてアプリを開いてください（' + r.sent + '回目）', 5, '#callback-' + S.deviceId);
+  }
+  async function ringTick() {
+    const r = S.ring;
+    if (!r) return;
+    if (Date.now() - r.started > RING_SESSION_MS || !devById(r.target)) {
+      stopRingSession();
+      endCall('出られませんでした（通知は送ってあります）', true);
+      return;
+    }
+    if (S.call || r.probing || !S.peer || !S.peer.open) return;
+    r.probing = true;
+    const online = await probeDev(r.target, 3500);
+    if (S.ring !== r) return;
+    r.probing = false;
+    if (online && !S.call) startCall('call', r.target);
+  }
+  function stopRingSession() {
+    const r = S.ring;
+    if (!r) return;
+    clearInterval(r.notifyTimer);
+    clearInterval(r.tryTimer);
+    S.ring = null;
+  }
+
+  /* =========================================================
      PeerJS 接続
      ========================================================= */
   function startPeer() {
     if (S.peer) { try { S.peer.destroy(); } catch (e) {} }
     setSelf('wait', '接続しています…');
-    const peer = new Peer(S.myId, { debug: 0 });
+    S.myPeerId = peerIdOf(S.deviceId);
+    const peer = new Peer(S.myPeerId, { debug: 0 });
     S.peer = peer;
 
     peer.on('open', () => {
@@ -951,10 +1395,11 @@
     peer.on('call', handleIncomingCall);
 
     peer.on('connection', (conn) => {
-      // 登録済みの相手以外からの接続はすぐ切る
-      if (conn.peer !== S.otherId) { conn.close(); return; }
-      conn.on('open', () => { setOther(true); setTimeout(() => { try { conn.close(); } catch (e) {} }, 3000); });
-      conn.on('data', (d) => { handleSignal(d).catch(() => {}); });
+      if (conn.metadata && conn.metadata.join === 1 && conn.peer.startsWith(JOIN_PREFIX)) { handleJoinConn(conn); return; }
+      const devId = devIdOfPeer(conn.peer);
+      // 名簿に載っている端末以外からの接続はすぐ切る
+      if (!devId || devId === S.deviceId) { try { conn.close(); } catch (e) {} return; }
+      wireConn(conn, devId, 3000);
     });
 
     peer.on('disconnected', () => {
@@ -971,9 +1416,10 @@
       if (S.peer !== peer) return;
       const type = err && err.type;
       if (type === 'peer-unavailable') {
-        setOther(false);
-        if (S.call && !S.verified) {
-          endCall(S.role === 'parent' ? 'こどもの端末がオフラインです' : 'おうちの人の端末がオフラインです', true);
+        const m = String(err.message || '').match(/mmr3-[0-9a-f]+-([A-Z2-9]+)/);
+        if (m && devById(m[1])) setOnline(m[1], false);
+        if (S.call && !S.verified && m && m[1] === S.callDev) {
+          endCall(`「${nameOf(S.callDev)}」はオフラインです`, true);
         }
         return;
       }
@@ -995,6 +1441,16 @@
     });
   }
 
+  // データ接続の共通処理：あいさつ（名簿の版の交換）と合図の受け取り
+  function wireConn(conn, devId, closeAfterMs) {
+    conn.on('open', () => {
+      setOnline(devId, true);
+      try { conn.send({ t: 'hello', ver: S.rb.ver, sig: S.roster.sig }); } catch (e) {}
+      setTimeout(() => { try { conn.close(); } catch (e) {} }, closeAfterMs);
+    });
+    conn.on('data', (d) => { handleMsg(devId, d, conn).catch(() => {}); });
+  }
+
   /* =========================================================
      相手のオンライン確認・合図の送信
      ========================================================= */
@@ -1008,27 +1464,37 @@
     S.presenceTimer = null;
   }
   function checkPresence() {
-    if (!S.peer || S.peer.disconnected || S.peer.destroyed) return;
+    if (!S.peer || S.peer.disconnected || S.peer.destroyed || !S.rb) return;
     if (S.call || S.incoming || S.pendingIn.size) return;
-    let opened = false, conn;
-    try { conn = S.peer.connect(S.otherId, { reliable: true }); } catch (e) { return; }
-    if (!conn) return;
-    conn.on('open', () => { opened = true; setOther(true); setTimeout(() => { try { conn.close(); } catch (e) {} }, 500); });
-    setTimeout(() => { if (!opened) { setOther(false); try { conn.close(); } catch (e) {} } }, 10000);
+    for (const d of otherDevices()) probeDev(d.id, 10000);
   }
-  function sendSignal(obj) {
-    if (!S.peer || S.peer.destroyed || S.peer.disconnected) return;
+  function probeDev(devId, timeoutMs) {
+    return new Promise((resolve) => {
+      let done = false, conn;
+      const fin = (v) => { if (done) return; done = true; if (!v) setOnline(devId, false); resolve(v); };
+      try { conn = S.peer.connect(peerIdOf(devId), { reliable: true }); } catch (e) { return resolve(false); }
+      if (!conn) return resolve(false);
+      wireConn(conn, devId, 3000);
+      conn.on('open', () => fin(true));
+      conn.on('error', () => fin(false));
+      setTimeout(() => { if (!done) { try { conn.close(); } catch (e) {} } fin(false); }, timeoutMs);
+    });
+  }
+  function sendMsg(devId, obj) {
+    if (!S.peer || S.peer.destroyed || S.peer.disconnected || !devById(devId)) return;
     let conn;
-    try { conn = S.peer.connect(S.otherId, { reliable: true }); } catch (e) { return; }
+    try { conn = S.peer.connect(peerIdOf(devId), { reliable: true }); } catch (e) { return; }
     if (!conn) return;
     conn.on('open', () => {
+      setOnline(devId, true);
       try { conn.send(obj); } catch (e) {}
       setTimeout(() => { try { conn.close(); } catch (e) {} }, 3000);
     });
+    conn.on('data', (d) => { handleMsg(devId, d, conn).catch(() => {}); });
   }
-  async function sendSigned(sig, n, extra = {}) {
-    const tag = await sign(`${sig}|${n}|${S.myId}|${S.otherId}`);
-    sendSignal(Object.assign({ sig, n, tag }, extra));
+  async function sendSigned(devId, sig, n) {
+    const tag = await ecSign(`${sig}|${n}|${S.myPeerId}|${peerIdOf(devId)}`);
+    sendMsg(devId, { t: sig, n, tag });
   }
 
   function noteAuthFail(reason) {
@@ -1036,19 +1502,30 @@
     const now = Date.now();
     S.authFails = S.authFails.filter(t => now - t < 10 * 60 * 1000);
     S.authFails.push(now);
-    if (S.authFails.length >= 3) toast('⚠ 確認できない接続を拒否しました。続く場合は設定から登録をやり直してください', 6000);
+    if (S.authFails.length >= 3) toast('⚠ 確認できない接続を拒否しました。続く場合は端末の一覧を確認してください', 6000);
   }
 
   /* =========================================================
      受け取った合図の処理（すべて署名を確認）
      ========================================================= */
-  async function handleSignal(d) {
-    if (!d || typeof d !== 'object' || typeof d.sig !== 'string' || typeof d.n !== 'string') return;
-    if (!S.authKey) return;
+  async function handleMsg(devId, d, conn) {
+    if (!d || typeof d !== 'object' || typeof d.t !== 'string') return;
+    if (!S.rb || !devById(devId)) return;
 
-    if (d.sig === 'auth-offer') {
-      // 発信側からの「この通話は本物です」という証明
-      const p = S.pendingIn.get(d.n) || { call: null, auth: null };
+    if (d.t === 'hello') {
+      // 相手の名簿が古ければ、こちらの名簿を渡す
+      if (typeof d.ver === 'number' && (d.ver < S.rb.ver || (d.ver === S.rb.ver && d.sig < S.roster.sig))) {
+        try { conn.send({ t: 'roster', r: S.roster }); } catch (e) {}
+      }
+      return;
+    }
+    if (d.t === 'roster') { await acceptRoster(d.r); return; }
+
+    if (typeof d.n !== 'string') return;
+
+    if (d.t === 'auth-offer') {
+      const p = S.pendingIn.get(d.n) || { call: null, auth: null, from: devId };
+      if (p.from !== devId) return;
       p.auth = d;
       S.pendingIn.set(d.n, p);
       if (p.call) verifyIncoming(d.n);
@@ -1056,11 +1533,10 @@
       return;
     }
 
-    if (d.sig === 'auth-answer') {
-      // 応答側からの「応答したのは本物です」という証明
-      if (!S.call || S.callNonce !== d.n || S.verified) return;
-      const text = `answer|${d.n}|${S.callOfferFp}|${d.fp}|${S.otherId}|${S.myId}`;
-      if (!(await verifySig(text, d.tag))) { noteAuthFail('answer署名'); endCall('安全な接続を確認できなかったため切断しました', true); return; }
+    if (d.t === 'auth-answer') {
+      if (!S.call || S.callNonce !== d.n || S.verified || S.callDev !== devId) return;
+      const text = `answer|${d.n}|${S.callOfferFp}|${d.fp}|${peerIdOf(devId)}|${S.myPeerId}`;
+      if (!(await ecVerify(devId, text, d.tag))) { noteAuthFail('answer署名'); endCall('安全な接続を確認できなかったため切断しました', true); return; }
       const call = S.call;
       const remoteFp = await waitFor(() => call.peerConnection && call.peerConnection.remoteDescription
         && sdpFingerprint(call.peerConnection.remoteDescription.sdp), 8000);
@@ -1071,20 +1547,22 @@
     }
 
     // 拒否・取り消し（署名つき）
-    const ok = await verifySig(`${d.sig}|${d.n}|${S.otherId}|${S.myId}`, d.tag);
+    if (d.t !== 'decline' && d.t !== 'cancel') return;
+    const ok = await ecVerify(devId, `${d.t}|${d.n}|${peerIdOf(devId)}|${S.myPeerId}`, d.tag);
     if (!ok) return;
-    if (d.sig === 'decline') {
+    if (d.t === 'decline') {
       if (S.call && S.callNonce === d.n && !S.verified) {
+        stopRingSession();
         endCall(S.callType === 'watch' ? '見守りは許可されませんでした' : '相手は電話に出られませんでした', true);
       }
-    } else if (d.sig === 'cancel') {
+    } else {
       if (S.incoming && S.incoming.n === d.n) {
         const inc = S.incoming;
         S.incoming = null;
         stopRing();
         $('incomingView').classList.add('hidden');
         try { inc.call.close(); } catch (e) {}
-        toast('着信がありました（不在）');
+        toast(`「${nameOf(devId)}」から着信がありました（不在）`);
         startPresence();
       }
       const p = S.pendingIn.get(d.n);
@@ -1116,8 +1594,11 @@
   /* =========================================================
      発信
      ========================================================= */
-  async function startCall(type) {
+  async function startCall(type, devId) {
     if (S.call || S.incoming) return;
+    const target = devById(devId);
+    if (!target || target.role === S.role) return;
+    if (type === 'watch' && (S.role !== 'parent' || target.role !== 'kid')) return;
     if (!S.peer || !S.peer.open) { toast('まだ接続できていません。少し待ってからお試しください'); return; }
 
     const sendVideo = type === 'call';
@@ -1125,24 +1606,27 @@
     catch (e) { toast('カメラ・マイクを使えませんでした'); return; }
 
     // 相手が本物と確認できるまで、こちらの映像・音声は一切送らない
-    S.wantMic = type === 'call';     // 見守りでは最初マイクオフ（「話しかける」でオン）
+    S.wantMic = type === 'call';
     S.wantVideo = sendVideo;
     S.localStream.getTracks().forEach(t => t.enabled = false);
 
     const n = randId();
     const ts = Date.now();
-    const call = S.peer.call(S.otherId, S.localStream, {
+    const targetPeer = peerIdOf(devId);
+    const call = S.peer.call(targetPeer, S.localStream, {
       metadata: { type, n, ts },
       constraints: { offerToReceiveAudio: true, offerToReceiveVideo: true },
     });
     if (!call) { stopLocal(); toast('発信できませんでした'); return; }
-    S.call = call; S.callType = type; S.callNonce = n; S.verified = false; S.pendingRemote = null; S.callOfferFp = null;
+    S.call = call; S.callType = type; S.callDev = devId; S.callNonce = n; S.verified = false; S.pendingRemote = null; S.callOfferFp = null;
     stopPresence();
 
-    $('dlTitle').textContent = type === 'watch' ? '見守りを開始しています…' : '呼び出しています…';
-    $('dlSub').textContent = S.role === 'parent' ? 'こどもの端末' : 'おうちの人の端末';
-    $('dialingView').classList.remove('hidden');
-    if (type === 'call') startRing('back');
+    if (!S.ring) {
+      $('dlTitle').textContent = type === 'watch' ? `「${target.name}」の見守りを開始しています…` : `「${target.name}」を呼び出しています…`;
+      $('dlSub').textContent = '';
+      $('dialingView').classList.remove('hidden');
+      if (type === 'call') startRing('back');
+    }
 
     S.dialTimer = setTimeout(() => {
       if (S.call === call && !S.verified) {
@@ -1161,8 +1645,8 @@
     if (S.call !== call) return;
     if (!fp) { endCall('発信できませんでした', true); return; }
     S.callOfferFp = fp;
-    const tag = await sign(`offer|${type}|${ts}|${n}|${fp}|${S.myId}|${S.otherId}`);
-    sendSignal({ sig: 'auth-offer', n, ts, type, fp, tag });
+    const tag = await ecSign(`offer|${type}|${ts}|${n}|${fp}|${S.myPeerId}|${targetPeer}`);
+    sendMsg(devId, { t: 'auth-offer', n, ts, type, fp, tag });
   }
 
   $('btnCancelDial').addEventListener('click', () => { stopRingSession(); endCall('', true); });
@@ -1183,12 +1667,16 @@
      ========================================================= */
   function handleIncomingCall(call) {
     const md = call.metadata || {};
-    if (call.peer !== S.otherId || typeof md.n !== 'string' || typeof md.ts !== 'number' || !['watch', 'call'].includes(md.type)) {
+    const devId = devIdOfPeer(call.peer);
+    const caller = devId && devById(devId);
+    if (!caller || caller.role === S.role || typeof md.n !== 'string' || typeof md.ts !== 'number' || !['watch', 'call'].includes(md.type)
+      || (md.type === 'watch' && caller.role !== 'parent')) {
       try { call.close(); } catch (e) {}
       return;
     }
     if (S.call || S.incoming || S.seenNonces.has(md.n)) { try { call.close(); } catch (e) {} return; }
-    const p = S.pendingIn.get(md.n) || { call: null, auth: null };
+    const p = S.pendingIn.get(md.n) || { call: null, auth: null, from: devId };
+    if (p.from !== devId) { try { call.close(); } catch (e) {} return; }
     p.call = call;
     S.pendingIn.set(md.n, p);
     stopPresence();
@@ -1208,14 +1696,14 @@
     const p = S.pendingIn.get(n);
     if (!p || !p.call || !p.auth) return;
     S.pendingIn.delete(n);
-    const { call, auth } = p;
+    const { call, auth, from } = p;
     const md = call.metadata;
     const reject = (why) => { noteAuthFail(why); try { call.close(); } catch (e) {} startPresence(); };
 
     if (S.seenNonces.has(n)) return reject('再送');
     if (auth.type !== md.type || auth.ts !== md.ts) return reject('内容不一致');
     if (Math.abs(Date.now() - md.ts) > MAX_CLOCK_SKEW_MS) return reject('時刻ずれ');
-    const okSig = await verifySig(`offer|${md.type}|${md.ts}|${n}|${auth.fp}|${S.otherId}|${S.myId}`, auth.tag);
+    const okSig = await ecVerify(from, `offer|${md.type}|${md.ts}|${n}|${auth.fp}|${peerIdOf(from)}|${S.myPeerId}`, auth.tag);
     if (!okSig) return reject('offer署名');
     const payload = call.options && call.options._payload;
     const offerSdp = payload && payload.sdp && (payload.sdp.sdp || payload.sdp);
@@ -1223,16 +1711,16 @@
     if (!offerFp || offerFp !== auth.fp) return reject('offer指紋不一致');
     S.seenNonces.add(n);
 
-    // ここまで来たら本物のおうちの人（またはこども）からの着信
-    setOther(true);
+    // ここまで来たら名簿に載っている本物の端末からの着信
+    setOnline(from, true);
     if (S.call || S.incoming) { try { call.close(); } catch (e) {} return; }
 
     if (S.role === 'kid' && md.type === 'watch' && S.watchAllowed) {
-      answer(call, 'watch', n, auth.fp);
+      answer(call, 'watch', n, auth.fp, from);
       return;
     }
-    S.incoming = { call, n, type: md.type, fp: auth.fp };
-    $('inTitle').textContent = S.role === 'kid' ? 'おうちの人から電話です' : 'こどもから電話です';
+    S.incoming = { call, n, type: md.type, fp: auth.fp, from };
+    $('inTitle').textContent = `${nameOf(from)}から電話です`;
     $('inSub').textContent = md.type === 'watch' ? '見守りのリクエスト' : 'ビデオ通話';
     $('incomingView').classList.remove('hidden');
     startRing('ring');
@@ -1241,7 +1729,7 @@
         S.incoming = null;
         stopRing();
         $('incomingView').classList.add('hidden');
-        toast('着信がありました（不在）');
+        toast(`「${nameOf(from)}」から着信がありました（不在）`);
         startPresence();
       }
     });
@@ -1254,7 +1742,7 @@
     S.incoming = null;
     stopRing();
     $('incomingView').classList.add('hidden');
-    answer(inc.call, inc.type, inc.n, inc.fp);
+    answer(inc.call, inc.type, inc.n, inc.fp, inc.from);
   });
 
   $('btnDecline').addEventListener('click', () => {
@@ -1264,27 +1752,26 @@
     $('incomingView').classList.add('hidden');
     if (inc) {
       try { inc.call.close(); } catch (e) {}
-      sendSigned('decline', inc.n);
+      sendSigned(inc.from, 'decline', inc.n);
     }
     startPresence();
   });
 
-  async function answer(call, type, n, offerFp) {
+  async function answer(call, type, n, offerFp, from) {
     // 応答側は相手を確認済みなので、そのまま送ってよい
     try { S.localStream = await getMedia(true); }
     catch (e) {
       try { call.close(); } catch (e2) {}
-      sendSigned('decline', n);
+      sendSigned(from, 'decline', n);
       toast('カメラ・マイクを使えませんでした');
       startPresence();
       return;
     }
-    S.call = call; S.callType = type; S.callNonce = n; S.callOfferFp = offerFp;
+    stopRingSession();
+    S.call = call; S.callType = type; S.callDev = from; S.callNonce = n; S.callOfferFp = offerFp;
     S.wantMic = true; S.wantVideo = true;
     S.verified = true; // 応答側は発信者の署名と指紋を確認済み
-    stopRingSession();
-    S.callbackPending = false;
-    $('callbackBanner').classList.add('hidden');
+    if (S.callbackDev === from) { S.callbackDev = null; $('callbackBanner').classList.add('hidden'); }
     S.pendingRemote = null;
     call.answer(S.localStream);
     wireCall(call);
@@ -1297,8 +1784,8 @@
     const myFp = pc && sdpFingerprint(pc.localDescription.sdp);
     const theirFp = pc && pc.remoteDescription && sdpFingerprint(pc.remoteDescription.sdp);
     if (!myFp || theirFp !== offerFp) { endCall('安全な接続を確認できなかったため切断しました'); return; }
-    const tag = await sign(`answer|${n}|${offerFp}|${myFp}|${S.myId}|${S.otherId}`);
-    sendSignal({ sig: 'auth-answer', n, fp: myFp, tag });
+    const tag = await ecSign(`answer|${n}|${offerFp}|${myFp}|${S.myPeerId}|${peerIdOf(from)}`);
+    sendMsg(from, { t: 'auth-answer', n, fp: myFp, tag });
   }
 
   /* =========================================================
@@ -1341,7 +1828,12 @@
     if (rv.srcObject === remote && !$('callView').classList.contains('hidden')) return;
     rv.srcObject = remote;
     rv.muted = false;
+    const other = nameOf(S.callDev);
     $('noVideo').classList.toggle('hidden', remote.getVideoTracks().length > 0);
+    $('noVideoText').textContent = '';
+    $('noVideoText').appendChild(document.createTextNode(`${other}とつながっています`));
+    $('noVideoText').appendChild(document.createElement('br'));
+    $('noVideoText').appendChild(document.createTextNode('（声だけ届きます）'));
     const p = rv.play();
     if (p && p.catch) p.catch((e) => { if (e && e.name === 'NotAllowedError') $('tapAudio').classList.remove('hidden'); });
 
@@ -1352,7 +1844,8 @@
     lv.classList.toggle('back', S.facing === 'environment');
 
     const isWatch = S.callType === 'watch';
-    $('callLabel').textContent = '🔐 ' + (isWatch ? (S.role === 'parent' ? '見守り中' : '見守られています') : 'ビデオ通話中');
+    $('callLabel').textContent = '🔐 ' + other + '：' + (isWatch ? (S.role === 'parent' ? '見守り中' : '見守られています') : 'ビデオ通話中');
+    $('watchBanner').textContent = `👀 ${other}が見ています`;
     $('watchBanner').classList.toggle('hidden', !(isWatch && S.role === 'kid'));
     $('cbFlip').classList.toggle('hidden', !hasLocalVideo);
     $('cbMic').querySelector('.l').textContent = (isWatch && S.role === 'parent') ? '話しかける' : 'マイク';
@@ -1433,11 +1926,11 @@
     clearTimeout(S.authTimer);
     clearInterval(S.iceTimer);
     stopRing();
-    const call = S.call, n = S.callNonce, wasVerified = S.verified;
-    S.call = null; S.callType = null; S.callNonce = null; S.callOfferFp = null;
+    const call = S.call, n = S.callNonce, wasVerified = S.verified, dev = S.callDev;
+    S.call = null; S.callType = null; S.callDev = null; S.callNonce = null; S.callOfferFp = null;
     S.verified = false; S.pendingRemote = null;
     if (call) {
-      if (notify && !wasVerified && n) sendSigned('cancel', n); // 応答前にやめたことを相手に知らせる
+      if (notify && !wasVerified && n && dev) sendSigned(dev, 'cancel', n); // 応答前にやめたことを相手に知らせる
       try { call.close(); } catch (e) {}
     }
     stopLocal();
@@ -1452,7 +1945,9 @@
       return;
     }
     $('dialingView').classList.add('hidden');
-    if (S.role && S.authKey && $('lockView').classList.contains('hidden')) $('homeView').classList.remove('hidden');
+    if (S.role && S.priv && $('lockView').classList.contains('hidden') && VIEWS.every(v => v === 'homeView' || $(v).classList.contains('hidden'))) {
+      $('homeView').classList.remove('hidden');
+    }
     if (msg) toast(msg);
     if (S.peer && !S.peer.destroyed) startPresence();
   }
