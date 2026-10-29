@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://unpkg.com 'sha256-1f088XxQ1qnhozmC2RrFW4k/JdV7fVbPUvdVbzZlVyw='; style-src 'unsafe-inline'; img-src 'self' data: blob:; manifest-src 'self'; media-src blob: mediastream:; connect-src wss://0.peerjs.com https://0.peerjs.com https://ntfy.sh; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://unpkg.com 'sha256-dMNgRpjPx0xABxfQ94e3Mytb9DM9gBKDb3Bzqbxld78='; style-src 'unsafe-inline'; img-src 'self' data: blob:; manifest-src 'self'; media-src blob: mediastream:; connect-src wss://0.peerjs.com https://0.peerjs.com https://ntfy.sh; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta id="vp" name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#2f7d6d">
@@ -154,6 +154,39 @@
   a.btn{text-decoration:none;box-sizing:border-box}
   a.btn + a.btn{margin-top:10px}
   details summary{cursor:pointer}
+  /* 通知設定（こどもの画面からも開けるようにスクロール可能に） */
+  html.kidmode #notifyView{position:fixed;inset:0;overflow-y:auto;background:var(--bg);z-index:6;margin:0;max-width:none}
+  html.kidmode .scrollable{touch-action:pan-y;-webkit-overflow-scrolling:touch}
+  .badge{display:inline-block;min-width:22px;height:22px;line-height:22px;border-radius:11px;background:var(--warn);color:#fff;font-size:13px;font-weight:700;padding:0 6px;margin-left:6px;text-align:center}
+  .btnrow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
+  .btnrow3 .btn{font-size:15px;padding:14px 4px;white-space:nowrap}
+  .btnrow3 .btn + .btn{margin-top:0}
+  .kidmsg{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:none;border-radius:20px;background:#fff;color:var(--main);
+    font-size:20px;font-weight:800;padding:14px;margin-top:-6px;box-shadow:0 4px 0 #c5ddd5}
+  .kidmsg:active{transform:translateY(3px);box-shadow:0 1px 0 #c5ddd5}
+  .kidgroup{display:flex;flex-direction:column;gap:12px}
+
+  /* メッセージ */
+  #chatView{position:fixed;inset:0;z-index:8;background:#eef4f2;display:flex;flex-direction:column}
+  .chathead{display:flex;align-items:center;gap:8px;background:var(--main);color:#fff;padding:calc(10px + env(safe-area-inset-top)) 12px 10px}
+  .chathead .ttl{font-size:18px;font-weight:700;flex:1}
+  .chathead button{background:none;border:none;color:#fff;font-size:16px;padding:8px;cursor:pointer}
+  #chatList{flex:1;overflow-y:auto;padding:14px 12px;display:flex;flex-direction:column;gap:8px}
+  .bub{max-width:78%;padding:10px 12px;border-radius:16px;font-size:16px;line-height:1.5;word-break:break-word;white-space:pre-wrap;box-shadow:0 1px 1px #0001}
+  .bub.in{align-self:flex-start;background:#fff;border-top-left-radius:4px}
+  .bub.out{align-self:flex-end;background:#cdeee2;border-top-right-radius:4px}
+  .bub img{display:block;max-width:100%;max-height:300px;border-radius:10px;cursor:pointer}
+  .bub .meta{font-size:11px;color:var(--sub);margin-top:4px;text-align:right}
+  .chatday{align-self:center;font-size:12px;color:var(--sub);background:#ffffffaa;border-radius:999px;padding:2px 10px}
+  #chatQuick{display:flex;gap:8px;overflow-x:auto;padding:8px 10px 0}
+  #chatQuick button{flex:none;border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;font-size:16px}
+  .chatinput{display:flex;align-items:flex-end;gap:8px;padding:10px 10px calc(10px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--line)}
+  .chatinput textarea{flex:1;font-size:17px;padding:10px 12px;border:1px solid var(--line);border-radius:18px;resize:none;max-height:120px;font-family:inherit;outline:none}
+  .chatinput .ib{flex:none;width:46px;height:46px;border-radius:50%;border:none;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .chatinput .cam{background:var(--main2)}
+  .chatinput .send{background:var(--main);color:#fff}
+  #imgViewer{position:fixed;inset:0;z-index:40;background:#000e;display:flex;align-items:center;justify-content:center}
+  #imgViewer img{max-width:100%;max-height:100%;object-fit:contain}
 </style>
 </head>
 <body>
@@ -279,9 +312,9 @@
 </section>
 
 <!-- ========== おうちの人：通知の設定 ========== -->
-<section id="notifyView" class="wrap hidden">
+<section id="notifyView" class="wrap scrollable hidden">
   <h1>🔔 通知の設定</h1>
-  <p class="lead">こどもがこの端末あてに「でんわ」を押したとき、このアプリを閉じていても通知でお知らせします。無料の通知アプリ「<b>ntfy</b>」を使います。3ステップで終わります。</p>
+  <p class="lead" id="notifyLead">このアプリを閉じていても、呼び出しやメッセージを通知でお知らせします。無料の通知アプリ「<b>ntfy</b>」を使います。3ステップで終わります。</p>
 
   <div class="card">
     <h2>① ntfy アプリを入れる</h2>
@@ -299,6 +332,7 @@
     </div>
     <div id="notifyIOS">
       <p class="note">iPhone の ntfy アプリは自動登録に対応していないため、名前を貼り付けて登録します。</p>
+      <a class="btn sub" href="https://apps.apple.com/app/ntfy/id1625396347" target="_blank" rel="noopener noreferrer" style="margin-bottom:10px">ntfy を App Store で開く</a>
       <button id="btnCopyTopic" class="btn">📋 通知の名前をコピー</button>
       <p class="note" style="margin-top:10px">
         コピーしたら ntfy アプリを開き、<br>
@@ -375,6 +409,7 @@
         <label class="tg"><input id="inWatchAllowed" type="checkbox"><span></span></label>
       </div>
     </div>
+    <button id="btnKidNotify" class="btn sub">🔔 通知の設定</button>
     <button id="btnKidFull" class="btn sub">⛶ 全画面にする</button>
     <button id="btnKidUnpair" class="btn danger">この端末の登録を解除する</button>
     <button id="btnKidSettingsClose" class="btn">とじる</button>
@@ -389,6 +424,23 @@
   <div id="scanText">おうちの人の端末に表示されている<br>QRコードを枠に合わせてください</div>
   <button id="btnScanCancel" class="btn sub">やめる</button>
 </section>
+
+<!-- ========== メッセージ ========== -->
+<section id="chatView" class="hidden">
+  <div class="chathead">
+    <button id="btnChatBack">‹ もどる</button>
+    <div class="ttl" id="chatTitle"></div>
+  </div>
+  <div id="chatList" class="scrollable"></div>
+  <div id="chatQuick"></div>
+  <div class="chatinput">
+    <button id="btnChatPhoto" class="ib cam" aria-label="写真を送る">📷</button>
+    <textarea id="chatText" rows="1" maxlength="1000" placeholder="メッセージ"></textarea>
+    <button id="btnChatSend" class="ib send" aria-label="送信">➤</button>
+  </div>
+  <input id="chatFile" type="file" accept="image/*" class="hidden">
+</section>
+<div id="imgViewer" class="hidden"><img id="imgViewerImg" alt=""></div>
 
 <!-- ========== 通話中 ========== -->
 <section id="callView" class="hidden">
@@ -461,6 +513,11 @@
   const RING_PROBE_MS = 2000;         // おうちの人がアプリを開いたか確かめる間隔
   const JSQR_URL = 'https://unpkg.com/jsqr@1.4.0/dist/jsQR.js';
   const JSQR_SRI = 'sha384-b5Ya4Bq3qCyz39m2ISh+4DxjAIljdeFwK/BsXLuj9gugaNwAcj/ia15fxNZL9Nlx';
+  const MSG_DB = 'mimamori-msg';
+  const MSG_TEXT_MAX = 1000;
+  const MSG_IMG_MAX_CHARS = 4 * 1024 * 1024;   // 受け取る写真データの上限
+  const IMG_MAX_SIDE = 1280;                   // 送る写真の長辺（ピクセル）
+  const KID_QUICK = ['😊 げんきだよ', '🏠 かえったよ', '📞 でんわして', '🙆 わかった', '❤️ だいすき'];
   const ECDSA = { name: 'ECDSA', namedCurve: 'P-256' };
   const ECDSA_SIGN = { name: 'ECDSA', hash: 'SHA-256' };
 
@@ -495,6 +552,10 @@
     wakeLock: null, audioCtx: null, ringTimer: null,
     pendingJoin: null,     // 参加処理中の情報
     heldIncoming: null,    // ロック中に届いた着信（ロック解除後に応答）
+    chatDev: null,         // 開いているメッセージ画面の相手
+    unread: new Map(),     // deviceId -> 未読数
+    flushing: new Set(),   // 送信待ちメッセージを送っている相手
+    openChatAfter: null,   // 通知から開いたときに表示するメッセージ相手
   };
 
   const $ = (id) => document.getElementById(id);
@@ -697,6 +758,8 @@
     for (const d of otherDevices()) sendMsg(d.id, { t: 'roster', r: S.roster });
   }
   function selfRevoked() {
+    closeChat();
+    try { dbClear(); } catch (e) {}
     document.documentElement.classList.remove('kidmode');
     $('kidSettings').classList.add('hidden');
     shutdownPeer();
@@ -742,6 +805,7 @@
   function setOnline(devId, v) {
     const prev = S.online.get(devId);
     S.online.set(devId, v);
+    if (v === true && prev !== true) setTimeout(() => flushOutbox(devId), 500);
     if (prev !== v) {
       document.querySelectorAll('[data-dot="' + devId + '"]').forEach(el => { el.className = 'dot ' + (v ? 'on' : ''); });
       document.querySelectorAll('[data-st="' + devId + '"]').forEach(el => { el.textContent = v === null || v === undefined ? '確認中…' : v ? 'オンライン' : 'オフライン'; });
@@ -779,6 +843,8 @@
     // 招待の内容がアドレス履歴に残らないようにすぐ消す
     if (hash) history.replaceState(null, '', location.pathname + location.search);
     const cb = hash.match(/^#callback-([A-Z0-9]+)$/);
+    const ch = hash.match(/^#chat-([A-Z0-9]+)$/);
+    if (ch) S.openChatAfter = ch[1];
     if (cb) S.callbackDev = cb[1];
     const jm = hash.match(/^#join-(.+)$/);
 
@@ -939,6 +1005,7 @@
 
   // ロック解除直後：保留中の着信や、通知から開いた場合の折り返しをすぐ処理する
   function afterUnlock() {
+    ensureKidTopics();
     const h = S.heldIncoming;
     S.heldIncoming = null;
     $('lockCallHint').classList.add('hidden');
@@ -952,6 +1019,13 @@
       // 通知から開いた場合は、こちらからすぐに折り返す（こどもの端末は自動で応答する）
       setTimeout(() => { if (!S.call && !S.incoming && S.callbackDev === id) { S.callbackDev = null; $('callbackBanner').classList.add('hidden'); startCall('call', id); } }, 300);
     }
+  }
+
+  // 以前に登録したこどもの端末に通知の名前がなければ、おうちの人の端末が付け足す
+  async function ensureKidTopics() {
+    if (S.role !== 'parent' || !S.priv) return;
+    if (!S.rb.devices.some(d => d.role === 'kid' && !d.topic)) return;
+    await updateRoster(b => { b.devices.forEach(d => { if (d.role === 'kid' && !d.topic) d.topic = 'mmr-' + hex(randBytes(16)); }); });
   }
 
   async function loadIdentity(privStr) {
@@ -1041,7 +1115,7 @@
       }
       const key = await genDeviceKey();
       const deviceId = toB32(randBytes(6));
-      const topic = j.role === 'parent' ? 'mmr-' + hex(randBytes(16)) : '';
+      const topic = 'mmr-' + hex(randBytes(16));
       const tokenKey = await hmacKey(j.token);
       const inviterPeer = ID_PREFIX + j.familyId + '-' + j.inviter;
 
@@ -1252,10 +1326,10 @@
         const pj = JSON.parse(d.pub);
         await crypto.subtle.importKey('jwk', pj, ECDSA, false, ['verify']);
       } catch (e) { try { conn.close(); } catch (e2) {} return; }
-      if (role === 'parent' && !/^mmr-[0-9a-f]{32}$/.test(d.topic || '')) { try { conn.close(); } catch (e) {} return; }
+      if (!/^mmr-[0-9a-f]{32}$/.test(d.topic || '')) { try { conn.close(); } catch (e) {} return; }
       S.invites.delete(foundB32); // 招待は1回だけ
       const entry = { id: d.id, name: found.name, role, pub: d.pub };
-      if (role === 'parent') entry.topic = d.topic;
+      entry.topic = d.topic;
       await updateRoster(b => { b.devices.push(entry); });
       const okText = `join-ok|${d.id}|${d.role}|${found.name}|${S.roster.bodyStr}|${fps.init}|${fps.resp}`;
       conn.send({ t: 'join-ok', name: found.name, roster: S.roster, mac: await hmacSign(foundKey, okText) });
@@ -1356,6 +1430,8 @@
     show(homeId());
     requestWakeLock();
     if (!S.peer || S.peer.destroyed) startPeer();
+    refreshUnread();
+    if (S.openChatAfter && devById(S.openChatAfter)) { const id = S.openChatAfter; S.openChatAfter = null; openChat(id); }
   }
   function renderHome() {
     $('myNameLabel').textContent = S.name;
@@ -1372,15 +1448,20 @@
         const c = el('div', { class: 'card devcard' });
         c.appendChild(el('div', { class: 'devname' }, '🧒 ' + k.name));
         c.appendChild(statusLine(k.id));
-        const row = el('div', { class: 'btnrow' });
+        const row = el('div', { class: 'btnrow3' });
         const w = el('button', { class: 'btn' }, '👀 見守る');
-        w.addEventListener('click', () => { unlockAudio(); startCall('watch', k.id); });
+        w.addEventListener('click', () => { unlockAudio(); callDevice('watch', k.id); });
         const v = el('button', { class: 'btn sub' }, '📹 通話');
-        v.addEventListener('click', () => { unlockAudio(); startCall('call', k.id); });
-        row.appendChild(w); row.appendChild(v);
+        v.addEventListener('click', () => { unlockAudio(); callDevice('call', k.id); });
+        const m = el('button', { class: 'btn sub' }, '💬 ');
+        m.appendChild(el('span', { 'data-unread': k.id }));
+        m.insertBefore(document.createTextNode('トーク'), m.lastChild);
+        m.addEventListener('click', () => openChat(k.id));
+        row.appendChild(w); row.appendChild(v); row.appendChild(m);
         c.appendChild(row);
         box.appendChild(c);
       }
+      paintUnread();
       const cbd = S.callbackDev && devById(S.callbackDev);
       $('callbackBanner').classList.toggle('hidden', !(cbd && cbd.role === 'kid'));
       if (cbd) $('callbackText').textContent = `📞 「${cbd.name}」から呼び出しがありました。`;
@@ -1398,9 +1479,16 @@
         t.appendChild(el('span', { class: 'kb-sub' }, 'でんわする'));
         b.appendChild(t);
         b.appendChild(el('span', { class: 'dot ' + (S.online.get(p.id) ? 'on' : ''), 'data-dot': p.id }));
-        b.addEventListener('click', () => { unlockAudio(); startRingSession(p.id); });
-        box.appendChild(b);
+        b.addEventListener('click', () => { unlockAudio(); startRingSession(p.id, 'call'); });
+        const grp = el('div', { class: 'kidgroup' });
+        grp.appendChild(b);
+        const mb = el('button', { class: 'kidmsg' }, '💬 ' + p.name + 'に メッセージ');
+        mb.appendChild(el('span', { 'data-unread': p.id }));
+        mb.addEventListener('click', () => openChat(p.id));
+        grp.appendChild(mb);
+        box.appendChild(grp);
       }
+      paintUnread();
     }
   }
 
@@ -1419,6 +1507,7 @@
   $('kidGear').addEventListener('mousedown', startPress);
   ['touchend', 'touchcancel', 'mouseup', 'mouseleave'].forEach(ev => $('kidGear').addEventListener(ev, endPress));
   $('btnKidSettingsClose').addEventListener('click', () => $('kidSettings').classList.add('hidden'));
+  $('btnKidNotify').addEventListener('click', () => { $('kidSettings').classList.add('hidden'); openNotifySetup(); });
   $('btnKidFull').addEventListener('click', () => {
     enterFullscreen();
     $('kidSettings').classList.add('hidden');
@@ -1444,7 +1533,11 @@
   // 全画面はタップがきっかけでないと入れないため、最初のタップで自動的に全画面にする
   document.addEventListener('pointerdown', () => { if (isKidMode() && $('kidSettings').classList.contains('hidden')) enterFullscreen(); }, true);
   // スクロール・ピンチ・長押しメニュー・ダブルタップ拡大などを止める
-  document.addEventListener('touchmove', (e) => { if (isKidMode() && e.cancelable) e.preventDefault(); }, { passive: false });
+  document.addEventListener('touchmove', (e) => {
+    if (!isKidMode() || !e.cancelable) return;
+    if (e.target && e.target.closest && e.target.closest('.scrollable')) return; // メッセージ一覧などはスクロールできる
+    e.preventDefault();
+  }, { passive: false });
   ['gesturestart', 'gesturechange', 'gestureend'].forEach(ev => document.addEventListener(ev, (e) => { if (isKidMode()) e.preventDefault(); }, { passive: false }));
   document.addEventListener('contextmenu', (e) => { if (isKidMode()) e.preventDefault(); });
   document.addEventListener('dblclick', (e) => { if (isKidMode()) e.preventDefault(); }, { passive: false });
@@ -1470,6 +1563,7 @@
     S.online.clear();
   }
   function lockNow() {
+    closeChat();
     shutdownPeer();
     releaseWakeLock();
     closeInvite('');
@@ -1477,6 +1571,8 @@
     openLock();
   }
   function wipeAll() {
+    closeChat();
+    try { dbClear(); } catch (e) {}
     document.documentElement.classList.remove('kidmode');
     $('kidSettings').classList.add('hidden');
     shutdownPeer();
@@ -1519,22 +1615,21 @@
   /* =========================================================
      通知（ntfy）
      ========================================================= */
-  $('btnNotifySetup').addEventListener('click', () => {
+  $('btnNotifySetup').addEventListener('click', () => openNotifySetup());
+  function openNotifySetup() {
     const me = devById(S.deviceId);
-    if (!me || !me.topic) return;
+    if (!me || !me.topic) { toast('通知の準備中です。おうちの人の端末を開いてから、もう一度お試しください', 5000); return; }
     $('ntfyTopic').textContent = me.topic;
-    // 端末の種類に合わせて案内を切り替える
+    // 端末の種類に合わせて案内を切り替える（アプリの入手先は両方とも表示）
     const ua = navigator.userAgent;
     const isAndroid = /Android/i.test(ua);
     const isIOS = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
-    $('lnkStoreIOS').classList.toggle('hidden', isAndroid);
-    $('lnkStoreAndroid').classList.toggle('hidden', isIOS);
     $('notifyAndroid').classList.toggle('hidden', isIOS);
     $('notifyIOS').classList.toggle('hidden', isAndroid);
     // Android の ntfy アプリは ntfy:// リンクで自動登録できる
     $('lnkNtfySubscribe').href = 'ntfy://ntfy.sh/' + me.topic + '?display=' + encodeURIComponent('みまもり（' + S.name + '）');
     show('notifyView');
-  });
+  }
   $('btnNotifyBack').addEventListener('click', () => { $('ntfyTopic').textContent = ''; $('lnkNtfySubscribe').href = '#'; enterHome(); });
   $('btnCopyTopic').addEventListener('click', async () => {
     const me = devById(S.deviceId);
@@ -1548,11 +1643,11 @@
   });
 
   // 通知の文面には個人情報や鍵を一切含めない
-  async function sendNtfy(topic, title, message, priority, clickHash) {
+  async function sendNtfy(topic, title, message, priority, clickHash, tag) {
     if (!topic) return false;
     const body = JSON.stringify({
       topic, title, message, priority,
-      tags: ['telephone_receiver'],
+      tags: [tag || 'telephone_receiver'],
       click: location.origin + location.pathname + (clickHash || ''),
     });
     try {
@@ -1565,11 +1660,16 @@
   /* =========================================================
      こどもからの呼び出し（通知を送りながら、おうちの人がアプリを開くのを待つ）
      ========================================================= */
-  function startRingSession(parentId) {
+  // おうちの人 → こども：相手がオンラインならすぐ発信、オフラインなら通知で起こしてから発信
+  function callDevice(type, devId) {
+    if (S.online.get(devId) === true) startCall(type, devId);
+    else startRingSession(devId, type);
+  }
+  function startRingSession(targetId, type) {
     if (S.ring || S.call || S.incoming) return;
-    const p = devById(parentId);
+    const p = devById(targetId);
     if (!p) return;
-    S.ring = { target: parentId, started: Date.now(), sent: 0, probing: false, notifyTimer: null, tryTimer: null };
+    S.ring = { target: targetId, type: type || 'call', started: Date.now(), sent: 0, probing: false, notifyTimer: null, tryTimer: null };
     showRingDialing();
     startRing('back');
     ringNotify();
@@ -1579,8 +1679,8 @@
   }
   function showRingDialing() {
     if (!S.ring) return;
-    $('dlTitle').textContent = `${nameOf(S.ring.target)}を呼び出しています…`;
-    $('dlSub').textContent = 'アプリを閉じていても、通知でお知らせしています';
+    $('dlTitle').textContent = S.ring.type === 'watch' ? `「${nameOf(S.ring.target)}」の見守りを開始しています…` : `${nameOf(S.ring.target)}を呼び出しています…`;
+    $('dlSub').textContent = S.role === 'parent' ? 'アプリが閉じていれば、通知でこどもの端末を起こしています' : 'アプリを閉じていても、通知でお知らせしています';
     $('dialingView').classList.remove('hidden');
   }
   async function ringNotify() {
@@ -1589,14 +1689,15 @@
     const p = devById(r.target);
     if (!p) return;
     r.sent++;
-    await sendNtfy(p.topic, `📞 みまもり：${S.name}から呼び出し`, 'タップしてアプリを開いてください（' + r.sent + '回目）', 5, '#callback-' + S.deviceId);
+    const title = S.role === 'parent' ? `📞 みまもり：${S.name}から でんわだよ` : `📞 みまもり：${S.name}から呼び出し`;
+    await sendNtfy(p.topic, title, 'タップしてアプリを開いてください（' + r.sent + '回目）', 5, '#callback-' + S.deviceId);
   }
   async function ringTick() {
     const r = S.ring;
     if (!r) return;
     if (Date.now() - r.started > RING_SESSION_MS || !devById(r.target)) {
       stopRingSession();
-      endCall('出られませんでした（通知は送ってあります）', true);
+      endCall(S.role === 'parent' ? 'こどもの端末につながりませんでした（アプリが開けない状態の可能性があります）' : '出られませんでした（通知は送ってあります）', true);
       return;
     }
     if (S.call || r.probing || !S.peer || !S.peer.open) return;
@@ -1604,7 +1705,7 @@
     const online = await probeDev(r.target, 3500);
     if (S.ring !== r) return;
     r.probing = false;
-    if (online && !S.call) startCall('call', r.target);
+    if (online && !S.call) startCall(r.type, r.target);
   }
   function stopRingSession() {
     const r = S.ring;
@@ -1612,6 +1713,274 @@
     clearInterval(r.notifyTimer);
     clearInterval(r.tryTimer);
     S.ring = null;
+  }
+
+  /* =========================================================
+     メッセージの保存（この端末の中だけ：IndexedDB）
+     ========================================================= */
+  let dbp = null;
+  function db() {
+    if (dbp) return dbp;
+    dbp = new Promise((resolve, reject) => {
+      const rq = indexedDB.open(MSG_DB, 1);
+      rq.onupgradeneeded = () => {
+        const st = rq.result.createObjectStore('msgs', { keyPath: 'key' });
+        st.createIndex('peer', 'peer');
+      };
+      rq.onsuccess = () => resolve(rq.result);
+      rq.onerror = () => reject(rq.error);
+    });
+    return dbp;
+  }
+  async function dbTx(mode, fn) {
+    const d = await db();
+    return new Promise((resolve, reject) => {
+      const tx = d.transaction('msgs', mode);
+      const out = fn(tx.objectStore('msgs'));
+      tx.oncomplete = () => resolve(out instanceof IDBRequest ? out.result : out);
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+  const dbPut = (m) => dbTx('readwrite', st => st.put(m));
+  const dbGet = (key) => dbTx('readonly', st => st.get(key));
+  const dbByPeer = (peer) => dbTx('readonly', st => st.index('peer').getAll(peer));
+  const dbAll = () => dbTx('readonly', st => st.getAll());
+  const dbClear = () => dbTx('readwrite', st => st.clear());
+  // 保存キー：家族ごと・端末ごとに分ける
+  function msgKey(peer, id, dir) { return S.rb.familyId + ':' + S.deviceId + ':' + peer + ':' + dir + ':' + id; }
+
+  async function refreshUnread() {
+    try {
+      const all = await dbAll();
+      S.unread.clear();
+      for (const m of all) {
+        if (m.fam !== S.rb.familyId || m.me !== S.deviceId) continue;
+        if (m.dir === 'in' && !m.read) S.unread.set(m.peer, (S.unread.get(m.peer) || 0) + 1);
+      }
+      paintUnread();
+    } catch (e) {}
+  }
+  function paintUnread() {
+    document.querySelectorAll('[data-unread]').forEach(e => {
+      const n = S.unread.get(e.getAttribute('data-unread')) || 0;
+      e.className = n ? 'badge' : '';
+      e.textContent = n ? String(n) : '';
+    });
+  }
+
+  /* =========================================================
+     安全なデータ接続（相手の端末の鍵で確認してから使う）
+     ========================================================= */
+  function wireSecure(conn, devId) {
+    let resolveFn;
+    const ready = new Promise(r => { resolveFn = r; });
+    conn._ready = ready;
+    let mySent = false, theirOk = false;
+    const tryReady = () => { if (mySent && theirOk) { conn._secure = true; resolveFn(true); } };
+    const kill = setTimeout(() => { if (!conn._secure) { resolveFn(false); try { conn.close(); } catch (e) {} } }, 15000);
+    conn.on('open', async () => {
+      setOnline(devId, true);
+      if (!S.priv) { try { conn.close(); } catch (e) {} resolveFn(false); return; } // ロック中は受け取らない
+      const fps = await connFingerprints(conn);
+      if (!fps) { try { conn.close(); } catch (e) {} resolveFn(false); return; }
+      conn._fps = fps;
+      try { conn.send({ t: 'sec', sig: await ecSign(`sec|${fps.init}|${fps.resp}|${S.myPeerId}|${peerIdOf(devId)}`) }); } catch (e) {}
+      mySent = true;
+      if (conn._pendingSec) await checkSec(conn._pendingSec);
+      tryReady();
+    });
+    const checkSec = async (d) => {
+      const fps = conn._fps;
+      if (!fps) { conn._pendingSec = d; return; }
+      const ok = await ecVerify(devId, `sec|${fps.init}|${fps.resp}|${peerIdOf(devId)}|${S.myPeerId}`, d.sig);
+      if (!ok) { noteAuthFail('データ接続の確認'); try { conn.close(); } catch (e) {} resolveFn(false); return; }
+      theirOk = true;
+      tryReady();
+    };
+    conn.on('data', async (d) => {
+      if (!d || typeof d !== 'object') return;
+      if (d.t === 'sec') { await checkSec(d); return; }
+      if (!conn._secure) return;
+      if (d.t === 'msg') await receiveChat(devId, d, conn);
+      else if (d.t === 'ack' && typeof d.id === 'string') conn._acks && conn._acks.has(d.id) && conn._acks.get(d.id)();
+    });
+    conn.on('close', () => { clearTimeout(kill); if (!conn._secure) resolveFn(false); });
+    conn.on('error', () => { if (!conn._secure) resolveFn(false); });
+    return ready;
+  }
+  async function secureConnect(devId) {
+    if (!S.peer || !S.peer.open || !S.priv) return null;
+    let conn;
+    try { conn = S.peer.connect(peerIdOf(devId), { reliable: true, metadata: { sec: 1 } }); } catch (e) { return null; }
+    if (!conn) return null;
+    const ok = await wireSecure(conn, devId);
+    return ok ? conn : null;
+  }
+
+  /* =========================================================
+     メッセージの送受信
+     ========================================================= */
+  async function sendChat(devId, kind, content) {
+    const id = randId();
+    const m = {
+      key: msgKey(devId, id, 'out'), id, fam: S.rb.familyId, me: S.deviceId, peer: devId, dir: 'out',
+      ts: Date.now(), kind, text: kind === 'text' ? content : '', img: kind === 'photo' ? content : '', status: 'pending', notified: false,
+    };
+    await dbPut(m);
+    if (S.chatDev === devId) appendBubble(m);
+    flushOutbox(devId);
+  }
+  async function flushOutbox(devId) {
+    if (!S.priv || !S.rb || !devById(devId) || S.flushing.has(devId)) return;
+    S.flushing.add(devId);
+    try {
+      const list = (await dbByPeer(devId)).filter(m => m.fam === S.rb.familyId && m.me === S.deviceId && m.dir === 'out' && m.status === 'pending').sort((a, b) => a.ts - b.ts);
+      if (!list.length) return;
+      const conn = await secureConnect(devId);
+      if (!conn) {
+        // 相手がアプリを開いていない：通知で知らせる（1通につき1回だけ）
+        const unnotified = list.filter(m => !m.notified);
+        if (unnotified.length) {
+          const p = devById(devId);
+          await sendNtfy(p.topic, `💬 みまもり：${S.name}からメッセージ`, 'タップしてアプリを開くと届きます', 4, '#chat-' + S.deviceId, 'speech_balloon');
+          for (const m of unnotified) { m.notified = true; await dbPut(m); }
+        }
+        return;
+      }
+      conn._acks = new Map();
+      for (const m of list) {
+        const acked = new Promise(res => { conn._acks.set(m.id, () => res(true)); setTimeout(() => res(false), 20000); });
+        conn.send({ t: 'msg', id: m.id, ts: m.ts, kind: m.kind, text: m.text, img: m.img });
+        if (!(await acked)) break;
+        m.status = 'sent';
+        await dbPut(m);
+        updateBubbleStatus(m);
+      }
+      setTimeout(() => { try { conn.close(); } catch (e) {} }, 2000);
+    } catch (e) {
+    } finally {
+      S.flushing.delete(devId);
+    }
+  }
+  async function receiveChat(devId, d, conn) {
+    if (typeof d.id !== 'string' || !/^[A-Z2-9]{20,30}$/.test(d.id) || typeof d.ts !== 'number' || !['text', 'photo'].includes(d.kind)) return;
+    const text = typeof d.text === 'string' ? d.text.slice(0, MSG_TEXT_MAX) : '';
+    let img = '';
+    if (d.kind === 'photo') {
+      if (typeof d.img !== 'string' || d.img.length > MSG_IMG_MAX_CHARS || !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(d.img)) return;
+      img = d.img;
+    } else if (!text.trim()) return;
+    const key = msgKey(devId, d.id, 'in');
+    const exists = await dbGet(key);
+    if (!exists) {
+      const reading = S.chatDev === devId && !$('chatView').classList.contains('hidden');
+      const m = { key, id: d.id, fam: S.rb.familyId, me: S.deviceId, peer: devId, dir: 'in', ts: Math.min(d.ts, Date.now()), kind: d.kind, text, img, read: reading };
+      await dbPut(m);
+      if (reading) appendBubble(m);
+      else {
+        S.unread.set(devId, (S.unread.get(devId) || 0) + 1);
+        paintUnread();
+        if (!S.call) chime();
+        toast(`💬 ${nameOf(devId)}からメッセージが届きました`);
+      }
+    }
+    try { conn.send({ t: 'ack', id: d.id }); } catch (e) {}
+  }
+
+  /* =========================================================
+     メッセージ画面
+     ========================================================= */
+  async function openChat(devId) {
+    const d = devById(devId);
+    if (!d) return;
+    if (!S.priv) { toast('ロックを解除してください'); return; }
+    S.chatDev = devId;
+    $('chatTitle').textContent = d.name;
+    $('chatList').innerHTML = '';
+    $('chatText').value = '';
+    const q = $('chatQuick');
+    q.innerHTML = '';
+    q.classList.toggle('hidden', S.role !== 'kid');
+    if (S.role === 'kid') for (const t of KID_QUICK) {
+      const b = el('button', {}, t);
+      b.addEventListener('click', () => sendChat(devId, 'text', t));
+      q.appendChild(b);
+    }
+    $('chatView').classList.remove('hidden');
+    const list = (await dbByPeer(devId)).filter(m => m.fam === S.rb.familyId && m.me === S.deviceId).sort((a, b) => a.ts - b.ts);
+    if (S.chatDev !== devId) return;
+    let lastDay = '';
+    for (const m of list) {
+      const day = new Date(m.ts).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'short' });
+      if (day !== lastDay) { $('chatList').appendChild(el('div', { class: 'chatday' }, day)); lastDay = day; }
+      appendBubble(m, true);
+      if (m.dir === 'in' && !m.read) { m.read = true; dbPut(m); }
+    }
+    S.unread.delete(devId);
+    paintUnread();
+    scrollChat();
+    flushOutbox(devId);
+  }
+  function closeChat() {
+    S.chatDev = null;
+    $('chatView').classList.add('hidden');
+    $('chatList').innerHTML = '';
+  }
+  $('btnChatBack').addEventListener('click', () => closeChat());
+  function scrollChat() { const l = $('chatList'); l.scrollTop = l.scrollHeight; }
+  function appendBubble(m, noScroll) {
+    const b = el('div', { class: 'bub ' + (m.dir === 'in' ? 'in' : 'out'), 'data-mid': m.key });
+    if (m.kind === 'photo') {
+      const im = el('img', { alt: '写真' });
+      im.src = m.img;
+      im.addEventListener('click', () => { $('imgViewerImg').src = m.img; $('imgViewer').classList.remove('hidden'); });
+      im.addEventListener('load', () => { if (!noScroll) scrollChat(); });
+      b.appendChild(im);
+    } else b.appendChild(document.createTextNode(m.text));
+    const t = new Date(m.ts).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+    b.appendChild(el('div', { class: 'meta' }, m.dir === 'out' ? t + (m.status === 'sent' ? ' ✓ 届きました' : ' ⏳ 送信待ち') : t));
+    $('chatList').appendChild(b);
+    if (!noScroll) scrollChat();
+  }
+  function updateBubbleStatus(m) {
+    const b = document.querySelector('[data-mid="' + CSS.escape(m.key) + '"] .meta');
+    if (b) b.textContent = new Date(m.ts).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) + ' ✓ 届きました';
+  }
+  $('imgViewer').addEventListener('click', () => { $('imgViewer').classList.add('hidden'); $('imgViewerImg').removeAttribute('src'); });
+  $('btnChatSend').addEventListener('click', () => {
+    const t = $('chatText').value.trim();
+    if (!t || !S.chatDev) return;
+    $('chatText').value = '';
+    sendChat(S.chatDev, 'text', t.slice(0, MSG_TEXT_MAX));
+  });
+  $('chatText').addEventListener('input', () => { const a = $('chatText'); a.style.height = 'auto'; a.style.height = Math.min(120, a.scrollHeight) + 'px'; });
+  $('btnChatPhoto').addEventListener('click', () => { $('chatFile').value = ''; $('chatFile').click(); });
+  $('chatFile').addEventListener('change', async () => {
+    const f = $('chatFile').files && $('chatFile').files[0];
+    if (!f || !S.chatDev) return;
+    const dev = S.chatDev;
+    try {
+      const dataUrl = await compressImage(f);
+      await sendChat(dev, 'photo', dataUrl);
+    } catch (e) { toast('写真を読み込めませんでした'); }
+  });
+  // 写真を小さくしてから送る（位置情報などの撮影データも、作り直すことで取り除かれる）
+  function compressImage(file) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, IMG_MAX_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+        const w = Math.round(img.naturalWidth * scale), h = Math.round(img.naturalHeight * scale);
+        const c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        resolve(c.toDataURL('image/jpeg', 0.8));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('img')); };
+      img.src = url;
+    });
   }
 
   /* =========================================================
@@ -1626,6 +1995,7 @@
 
     peer.on('open', () => {
       S.reconnectTries = 0; S.idRetry = 0;
+      setTimeout(() => { for (const d of otherDevices()) flushOutbox(d.id); }, 1500);
       setSelf('on', '待ち受け中');
       startPresence();
     });
@@ -1637,6 +2007,7 @@
       const devId = devIdOfPeer(conn.peer);
       // 名簿に載っている端末以外からの接続はすぐ切る
       if (!devId || devId === S.deviceId) { try { conn.close(); } catch (e) {} return; }
+      if (conn.metadata && conn.metadata.sec === 1) { wireSecure(conn, devId); return; }
       wireConn(conn, devId, 3000);
     });
 
@@ -1752,6 +2123,7 @@
     if (!S.rb || !devById(devId)) return;
 
     if (d.t === 'hello') {
+      setTimeout(() => flushOutbox(devId), 800); // 送信待ちのメッセージがあれば送る
       // 相手の名簿が古ければ、こちらの名簿を渡す
       if (typeof d.ver === 'number' && (d.ver < S.rb.ver || (d.ver === S.rb.ver && d.sig < S.roster.sig))) {
         try { conn.send({ t: 'roster', r: S.roster }); } catch (e) {}
@@ -1981,7 +2353,7 @@
       return;
     }
     // 通知から開いて折り返し待ちの相手なら、鳴らさずにすぐ応答する
-    if (S.role === 'parent' && S.callbackDev === from && md.type === 'call') {
+    if (S.callbackDev === from && md.type === 'call') {
       unlockAudio();
       answer(call, 'call', n, auth.fp, from);
       return;
@@ -2053,6 +2425,7 @@
     S.wantMic = true; S.wantVideo = true;
     S.verified = true; // 応答側は発信者の署名と指紋を確認済み
     if (S.callbackDev === from) { S.callbackDev = null; $('callbackBanner').classList.add('hidden'); }
+    if (S.chatDev) closeChat();
     S.pendingRemote = null;
     call.answer(S.localStream);
     wireCall(call);
