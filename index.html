@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://unpkg.com 'sha256-1p+4h8EsxD+TA+B4jok9EO7tPXAVzsHH0Qd1ujUGpWE='; style-src 'unsafe-inline'; img-src 'self' data: blob:; manifest-src 'self'; media-src blob: mediastream:; connect-src wss://0.peerjs.com https://0.peerjs.com https://ntfy.sh; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://unpkg.com 'sha256-R1cdH4vxKt5nirUXp0nIeeQNOWouAZrVoJsOjC4UQ+0='; style-src 'unsafe-inline'; img-src 'self' data: blob:; manifest-src 'self'; media-src blob: mediastream:; connect-src wss://0.peerjs.com https://0.peerjs.com https://ntfy.sh; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta id="vp" name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#2f7d6d">
@@ -151,6 +151,9 @@
   .kidempty{text-align:center;color:var(--sub);font-size:18px;line-height:1.8}
   #kidSettings{position:fixed;inset:0;z-index:30;background:#0007;display:flex;align-items:center;justify-content:center;padding:20px}
   #kidSettings .box{background:#fff;border-radius:18px;padding:20px;width:100%;max-width:420px}
+  a.btn{text-decoration:none;box-sizing:border-box}
+  a.btn + a.btn{margin-top:10px}
+  details summary{cursor:pointer}
 </style>
 </head>
 <body>
@@ -277,32 +280,43 @@
 <!-- ========== おうちの人：通知の設定 ========== -->
 <section id="notifyView" class="wrap hidden">
   <h1>🔔 通知の設定</h1>
-  <p class="lead">こどもがこの端末あてに「電話」を押したとき、このアプリを閉じていても通知でお知らせします。無料の通知アプリ「<b>ntfy</b>」を使います。通知の名前は<b>この端末専用</b>です。</p>
-  <div class="warnbox">⚠ 下の「通知の名前」は秘密の名前です。家族以外に教えないでください。</div>
+  <p class="lead">こどもがこの端末あてに「でんわ」を押したとき、このアプリを閉じていても通知でお知らせします。無料の通知アプリ「<b>ntfy</b>」を使います。3ステップで終わります。</p>
+
   <div class="card">
-    <h2>通知の名前</h2>
-    <div class="code" id="ntfyTopic"></div>
-    <div style="height:10px"></div>
-    <button id="btnCopyTopic" class="btn sub">📋 コピーする</button>
+    <h2>① ntfy アプリを入れる</h2>
+    <p class="note">入れてある場合は②へ進んでください。</p>
+    <a id="lnkStoreIOS" class="btn sub" href="https://apps.apple.com/app/ntfy/id1625396347" target="_blank" rel="noopener noreferrer">App Store で入手（iPhone）</a>
+    <a id="lnkStoreAndroid" class="btn sub" href="https://play.google.com/store/apps/details?id=io.heckel.ntfy" target="_blank" rel="noopener noreferrer">Google Play で入手（Android）</a>
   </div>
+
   <div class="card">
-    <h2>iPhone の場合</h2>
-    <p class="note">
-      1. App Store で「<b>ntfy</b>」をインストールして開きます。<br>
-      2. 右上の「＋」を押し、「Topic name」に上の名前を貼り付けて「Subscribe」を押します（サーバーは ntfy.sh のままでOK）。<br>
-      3. 通知の許可を聞かれたら「許可」を押します。<br>
-      4. こどもが電話を押すと、<b>10秒おきに最大6回</b>通知が届きます。通知をタップするとこのアプリが開き、そのままこどもの呼び出しにつながります。<br>
-      ※ 集中モードやおやすみモードの間は、ntfy を「許可するアプリ」に追加しておくと鳴ります。
-    </p>
-    <h2 style="margin-top:14px">Android の場合</h2>
-    <p class="note">
-      1. Google Play で「<b>ntfy</b>」をインストールして開きます。<br>
-      2. 「＋」から上の名前を入力して登録します。<br>
-      3. 登録した名前をタップ → 右上のメニュー →「通知の設定」で、<b>鳴り続ける通知（Insistent）</b>をオンにすると、止めるまで鳴り続けます。<br>
-      4. 優先度「最大（urgent）」の通知チャンネルの音量・バイブもオンにしてください。
-    </p>
+    <h2>② この端末の通知を登録する</h2>
+    <div id="notifyAndroid">
+      <p class="note">下のボタンを押すと ntfy アプリが開き、<b>自動で登録</b>されます。</p>
+      <a id="lnkNtfySubscribe" class="btn" href="#">📲 ntfy にワンタップで登録</a>
+      <p class="note" style="margin-top:10px">登録したら、ntfy でその項目を開き → 右上のメニュー →「通知の設定」で<b>鳴り続ける通知（Insistent）</b>をオンにすると、止めるまで鳴り続けます。</p>
+    </div>
+    <div id="notifyIOS">
+      <p class="note">iPhone の ntfy アプリは自動登録に対応していないため、名前を貼り付けて登録します。</p>
+      <button id="btnCopyTopic" class="btn">📋 通知の名前をコピー</button>
+      <p class="note" style="margin-top:10px">
+        コピーしたら ntfy アプリを開き、<br>
+        右上の「＋」→「Topic name」に<b>貼り付け</b>→「Subscribe」<br>
+        通知の許可を聞かれたら「許可」を押してください。<br>
+        ※ 集中モード中も鳴らしたい場合は、そのモードの設定で ntfy を「許可するアプリ」に追加してください。
+      </p>
+    </div>
+    <details style="margin-top:10px">
+      <summary class="note">通知の名前を表示する</summary>
+      <div class="code" id="ntfyTopic" style="margin-top:8px"></div>
+      <p class="note">⚠ 秘密の名前です。家族以外に教えないでください。</p>
+    </details>
   </div>
-  <button id="btnTestNotify" class="btn sub">📨 テスト通知を送る</button>
+
+  <div class="card">
+    <h2>③ テスト通知で確認する</h2>
+    <button id="btnTestNotify" class="btn sub">📨 テスト通知を送る</button>
+  </div>
   <button id="btnNotifyBack" class="btn">もどる</button>
 </section>
 
@@ -1473,12 +1487,22 @@
     const me = devById(S.deviceId);
     if (!me || !me.topic) return;
     $('ntfyTopic').textContent = me.topic;
+    // 端末の種類に合わせて案内を切り替える
+    const ua = navigator.userAgent;
+    const isAndroid = /Android/i.test(ua);
+    const isIOS = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    $('lnkStoreIOS').classList.toggle('hidden', isAndroid);
+    $('lnkStoreAndroid').classList.toggle('hidden', isIOS);
+    $('notifyAndroid').classList.toggle('hidden', isIOS);
+    $('notifyIOS').classList.toggle('hidden', isAndroid);
+    // Android の ntfy アプリは ntfy:// リンクで自動登録できる
+    $('lnkNtfySubscribe').href = 'ntfy://ntfy.sh/' + me.topic + '?display=' + encodeURIComponent('みまもり（' + S.name + '）');
     show('notifyView');
   });
-  $('btnNotifyBack').addEventListener('click', () => { $('ntfyTopic').textContent = ''; enterHome(); });
+  $('btnNotifyBack').addEventListener('click', () => { $('ntfyTopic').textContent = ''; $('lnkNtfySubscribe').href = '#'; enterHome(); });
   $('btnCopyTopic').addEventListener('click', async () => {
     const me = devById(S.deviceId);
-    try { await navigator.clipboard.writeText(me.topic); toast('コピーしました'); }
+    try { await navigator.clipboard.writeText(me.topic); toast('コピーしました。ntfy アプリを開いて「＋」から貼り付けてください', 5000); }
     catch (e) { toast('コピーできませんでした。名前を長押ししてコピーしてください'); }
   });
   $('btnTestNotify').addEventListener('click', async () => {
