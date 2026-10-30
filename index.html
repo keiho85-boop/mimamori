@@ -2,12 +2,18 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://unpkg.com 'sha256-dMNgRpjPx0xABxfQ94e3Mytb9DM9gBKDb3Bzqbxld78='; style-src 'unsafe-inline'; img-src 'self' data: blob:; manifest-src 'self'; media-src blob: mediastream:; connect-src wss://0.peerjs.com https://0.peerjs.com https://ntfy.sh; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://unpkg.com 'sha256-F4BcuLk72RIUgyWBU/Uk9vDvDB73kUXspTL2MKa8QLg='; style-src 'unsafe-inline'; img-src 'self' data: blob:; manifest-src 'self'; media-src blob: mediastream:; connect-src wss://0.peerjs.com https://0.peerjs.com https://ntfy.sh; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta id="vp" name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#2f7d6d">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="みまもり">
+<meta name="format-detection" content="telephone=no">
 <title>みまもりビデオ通話</title>
 <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js" integrity="sha384-x0YgkOr/3UOZP2CRDxGW9e0Q+2Qjyr3uJrm4xU32Y7ZCNAo7Cc7bjhrZMi/dwczu" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js" integrity="sha384-8FWZA6BGMXhsfO+BLtrJK0We6gg5o1JyO8xQm6peWDEUs17ACA5ziE/NIAkl9z2k" crossorigin="anonymous"></script>
@@ -187,6 +193,39 @@
   .chatinput .send{background:var(--main);color:#fff}
   #imgViewer{position:fixed;inset:0;z-index:40;background:#000e;display:flex;align-items:center;justify-content:center}
   #imgViewer img{max-width:100%;max-height:100%;object-fit:contain}
+  /* ---- Safari 対策 ---- */
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  html,body{min-height:100vh;min-height:100dvh}
+  input,textarea,select,button{font-family:inherit;-webkit-appearance:none;appearance:none;border-radius:0}
+  input,textarea,select{font-size:16px}  /* 16px 未満だと iPhone が入力時に勝手に拡大する */
+  input[type=text],input[type=password],textarea{border-radius:12px}
+  .btn{border-radius:14px} .rb{border-radius:50%} .kidbtn{border-radius:28px} .kidmsg{border-radius:20px}
+  #chatQuick button{border-radius:999px} .chatinput .ib{border-radius:50%} #kidGear{border-radius:50%}
+  #dialog input{width:100%;font-size:18px;padding:12px 14px;border:1px solid var(--line);border-radius:12px}
+  /* 画面全体を使う画面は、アドレスバーの出入りに合わせた高さにする */
+  #kidView,#chatView,#callView,.overlay,#scanView,#kidSettings,#dialog,#imgViewer{top:0;bottom:auto;height:100vh;height:100dvh}
+
+  /* ---- こども専用キーボード ---- */
+  #kidCompose{display:none;flex:1;min-height:46px;max-height:96px;overflow-y:auto;background:#f6f9f8;border:1px solid var(--line);border-radius:18px;
+    padding:10px 12px;font-size:20px;line-height:1.4;word-break:break-all;white-space:pre-wrap}
+  #kidCompose .ph{color:#9aa8a4}
+  #kidCompose .caret{display:inline-block;width:2px;height:1.1em;background:var(--main);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  #kidKb{display:none;background:#dfe9e5;padding:6px 6px calc(6px + env(safe-area-inset-bottom));user-select:none;-webkit-user-select:none}
+  .kbtabs{display:flex;gap:6px;margin-bottom:6px}
+  .kbtabs button{flex:1;border:none;border-radius:10px;background:#fff;color:var(--sub);font-size:16px;font-weight:700;padding:8px 0}
+  .kbtabs button.on{background:var(--main);color:#fff}
+  .kbgrid{display:grid;gap:5px}
+  .kbgrid button,.kbfn button{border:none;border-radius:10px;background:#fff;color:var(--ink);font-size:22px;font-weight:600;
+    height:clamp(38px,6.2vh,58px);box-shadow:0 2px 0 #b9c9c3;touch-action:manipulation;padding:0}
+  .kbgrid button:active,.kbfn button:active{transform:translateY(2px);box-shadow:none;background:#e9f3ef}
+  .kbgrid button.blank{visibility:hidden}
+  .kbfn{display:grid;grid-template-columns:repeat(7,1fr) 1.3fr 1.3fr;gap:5px;margin-top:5px}
+  .kbfn button{font-size:18px}
+  .kbfn .del{background:#fbe9e8;color:var(--warn)}
+  .kbfn .page{background:#eef4f2;color:var(--main)}
+  .kbcount{font-size:12px;color:var(--sub);text-align:right;padding:2px 6px 0}
+  #staleView{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;gap:16px}
 </style>
 </head>
 <body>
@@ -207,7 +246,7 @@
     <button id="btnJoinByCode" class="btn sub">⌨ 登録コードを入力する</button>
   </div>
   <p class="note">※ 映像と音声は端末どうしで暗号化して直接やりとりし、どこにも保存されません。</p>
-  <div id="iosStandaloneNote" class="warnbox hidden" style="margin-top:14px">iPhone・iPadでは、ホーム画面のアイコンから開くと、Safariで登録した内容とは別扱いになります。Safariで登録した場合は、Safariから開いて使ってください。</div>
+  <div id="iosSafariTip" class="warnbox hidden" style="margin-top:14px">📱 <b>iPhone・iPadのこどもの端末は</b>、Safari の「共有」→「ホーム画面に追加」をしてから、<b>ホーム画面のアイコンで開いて</b>登録してください。アドレスバーのない全画面で使えます。<br>（ホーム画面のアイコンと Safari では登録内容が別々になります。登録したほうで使ってください）</div>
 </section>
 
 <!-- ========== おうちの人：パスワード設定 ========== -->
@@ -352,6 +391,21 @@
     <h2>③ テスト通知で確認する</h2>
     <button id="btnTestNotify" class="btn sub">📨 テスト通知を送る</button>
   </div>
+  <div class="card">
+    <h2>届かない・遅れるときの確認</h2>
+    <p class="note">
+      <b>Android</b><br>
+      ・ntfy でこの項目を開き、設定の「<b>即時配信（Instant delivery）</b>」をオンにする<br>
+      ・端末の設定 → アプリ → ntfy → バッテリー を「<b>制限なし</b>」にする<br>
+      ・通知の音量（メディアではなく通知の音量）が0になっていないか<br>
+      <b>iPhone</b><br>
+      ・設定 → 通知 → ntfy で「通知を許可」がオンになっているか<br>
+      ・集中モード（おやすみモードなど）の「許可されたアプリ」に ntfy を入れる<br>
+      ・低電力モード中は通知が遅れることがあります<br>
+      <b>共通</b><br>
+      ・通知を送る側の端末は、呼び出し中は<b>アプリの画面を開いたまま</b>にしてください（画面を閉じると送信が止まります）
+    </p>
+  </div>
   <button id="btnNotifyBack" class="btn">もどる</button>
 </section>
 
@@ -436,8 +490,10 @@
   <div class="chatinput">
     <button id="btnChatPhoto" class="ib cam" aria-label="写真を送る">📷</button>
     <textarea id="chatText" rows="1" maxlength="1000" placeholder="メッセージ"></textarea>
+    <div id="kidCompose"></div>
     <button id="btnChatSend" class="ib send" aria-label="送信">➤</button>
   </div>
+  <div id="kidKb"></div>
   <input id="chatFile" type="file" accept="image/*" class="hidden">
 </section>
 <div id="imgViewer" class="hidden"><img id="imgViewerImg" alt=""></div>
@@ -486,6 +542,12 @@
   </div>
 </div>
 
+<div id="staleView" class="hidden">
+  <div style="font-size:56px">🔁</div>
+  <div style="font-size:18px;font-weight:700;line-height:1.6">このアプリは、別の画面（タブ）で開かれました。<br>この画面は停止しています。</div>
+  <button id="btnStaleReload" class="btn" style="max-width:320px">この画面で使う</button>
+</div>
+
 <div id="toast" class="hidden"></div>
 
 <script>
@@ -518,7 +580,12 @@
   const MSG_IMG_MAX_CHARS = 4 * 1024 * 1024;   // 受け取る写真データの上限
   const IMG_MAX_SIDE = 1280;                   // 送る写真の長辺（ピクセル）
   const KID_QUICK = ['😊 げんきだよ', '🏠 かえったよ', '📞 でんわして', '🙆 わかった', '❤️ だいすき'];
+  const KID_TEXT_MAX = 100;
+  const CALLBACK_FRESH_MS = 2 * 60 * 1000;   // 通知から開いたときに自動でつなぐ期限
+  const CALLBACK_WAIT_MS = 4000;              // ロック解除後、相手からの着信を待つ時間
+  const TAB_ID = randHex8();
   const ECDSA = { name: 'ECDSA', namedCurve: 'P-256' };
+  function randHex8() { const a = new Uint8Array(4); crypto.getRandomValues(a); return Array.from(a).map(b => b.toString(16).padStart(2, '0')).join(''); }
   const ECDSA_SIGN = { name: 'ECDSA', hash: 'SHA-256' };
 
   const S = {
@@ -556,6 +623,10 @@
     unread: new Map(),     // deviceId -> 未読数
     flushing: new Set(),   // 送信待ちメッセージを送っている相手
     openChatAfter: null,   // 通知から開いたときに表示するメッセージ相手
+    cbFresh: false,        // 通知から開いたのが新しい呼び出しか
+    cbWaitTimer: null,
+    stale: false,          // 別のタブに切り替わって停止中
+    kb: { tab: 'hira', page: 0, text: '' },
   };
 
   const $ = (id) => document.getElementById(id);
@@ -842,7 +913,11 @@
     const hash = location.hash;
     // 招待の内容がアドレス履歴に残らないようにすぐ消す
     if (hash) history.replaceState(null, '', location.pathname + location.search);
-    const cb = hash.match(/^#callback-([A-Z0-9]+)$/);
+    const cb = hash.match(/^#callback-([A-Z0-9]+)(?:-([0-9a-z]+))?$/);
+    if (cb) {
+      const ts = cb[2] ? parseInt(cb[2], 36) : Date.now();
+      S.cbFresh = Math.abs(Date.now() - ts) < CALLBACK_FRESH_MS;
+    }
     const ch = hash.match(/^#chat-([A-Z0-9]+)$/);
     if (ch) S.openChatAfter = ch[1];
     if (cb) S.callbackDev = cb[1];
@@ -1016,8 +1091,18 @@
     }
     if (S.callbackDev && devById(S.callbackDev) && !S.call && !S.incoming) {
       const id = S.callbackDev;
-      // 通知から開いた場合は、こちらからすぐに折り返す（こどもの端末は自動で応答する）
-      setTimeout(() => { if (!S.call && !S.incoming && S.callbackDev === id) { S.callbackDev = null; $('callbackBanner').classList.add('hidden'); startCall('call', id); } }, 300);
+      if (!S.cbFresh) return; // 古い通知から開いた場合は、自動ではつながず「折り返す」ボタンだけ出す
+      // まずは相手からの着信を少し待つ（届けばそのまま自動で応答）。届かなければこちらから折り返す
+      $('dlTitle').textContent = `「${nameOf(id)}」につないでいます…`;
+      $('dlSub').textContent = '';
+      $('dialingView').classList.remove('hidden');
+      clearTimeout(S.cbWaitTimer);
+      S.cbWaitTimer = setTimeout(() => {
+        if (S.call || S.incoming || S.callbackDev !== id) return;
+        S.callbackDev = null;
+        $('callbackBanner').classList.add('hidden');
+        startCall('call', id, { callback: true });
+      }, CALLBACK_WAIT_MS);
     }
   }
 
@@ -1604,7 +1689,7 @@
       lockNow();
       return;
     }
-    if (S.role && S.peer) {
+    if (S.role && S.peer && !S.stale) {
       requestWakeLock();
       if (S.peer.destroyed) startPeer();
       else if (S.peer.disconnected) { try { S.peer.reconnect(); } catch (e) { startPeer(); } }
@@ -1642,6 +1727,14 @@
     toast(ok ? 'テスト通知を送りました。届いたか確認してください' : '送れませんでした。電波を確認してください');
   });
 
+  // 送信に失敗したら、間を置いて最大2回まで送り直す
+  async function sendNtfyRetry(...args) {
+    for (let i = 0; i < 3; i++) {
+      if (await sendNtfy(...args)) return true;
+      await new Promise(r => setTimeout(r, i === 0 ? 2000 : 5000));
+    }
+    return false;
+  }
   // 通知の文面には個人情報や鍵を一切含めない
   async function sendNtfy(topic, title, message, priority, clickHash, tag) {
     if (!topic) return false;
@@ -1662,20 +1755,28 @@
      ========================================================= */
   // おうちの人 → こども：相手がオンラインならすぐ発信、オフラインなら通知で起こしてから発信
   function callDevice(type, devId) {
-    if (S.online.get(devId) === true) startCall(type, devId);
-    else startRingSession(devId, type);
+    // オンライン表示は最大20秒前の情報なので信用せず、その場で確かめてからつなぐ（だめなら通知で起こす）
+    startRingSession(devId, type);
   }
   function startRingSession(targetId, type) {
     if (S.ring || S.call || S.incoming) return;
     const p = devById(targetId);
     if (!p) return;
-    S.ring = { target: targetId, type: type || 'call', started: Date.now(), sent: 0, probing: false, notifyTimer: null, tryTimer: null };
+    S.ring = { target: targetId, type: type || 'call', started: Date.now(), sent: 0, probing: false, notifyTimer: null, tryTimer: null, armed: false };
     showRingDialing();
-    startRing('back');
-    ringNotify();
-    S.ring.notifyTimer = setInterval(ringNotify, NOTIFY_INTERVAL_MS);
+    if (S.ring.type === 'call') startRing('back');
+    // こども → おうちの人：おうちの人のアプリが裏に回っていることが多いので、最初から通知も送る
+    // おうちの人 → こども：まず相手を確かめ、つながらないときだけ通知で起こす
+    if (S.role === 'kid') armRingNotify();
     S.ring.tryTimer = setInterval(ringTick, RING_PROBE_MS);
     ringTick();
+  }
+  function armRingNotify() {
+    const r = S.ring;
+    if (!r || r.armed) return;
+    r.armed = true;
+    ringNotify();
+    r.notifyTimer = setInterval(ringNotify, NOTIFY_INTERVAL_MS);
   }
   function showRingDialing() {
     if (!S.ring) return;
@@ -1690,7 +1791,11 @@
     if (!p) return;
     r.sent++;
     const title = S.role === 'parent' ? `📞 みまもり：${S.name}から でんわだよ` : `📞 みまもり：${S.name}から呼び出し`;
-    await sendNtfy(p.topic, title, 'タップしてアプリを開いてください（' + r.sent + '回目）', 5, '#callback-' + S.deviceId);
+    const ok = await sendNtfyRetry(p.topic, title, 'タップしてアプリを開いてください（' + r.sent + '回目）', 5, '#callback-' + S.deviceId + '-' + Date.now().toString(36));
+    if (S.ring === r) {
+      r.okCount = (r.okCount || 0) + (ok ? 1 : 0);
+      $('dlSub').textContent = ok ? `通知を送りました（${r.okCount}回）。この画面は開いたままにしてください` : '通知を送れませんでした。電波を確認してください（再送します）';
+    }
   }
   async function ringTick() {
     const r = S.ring;
@@ -1706,6 +1811,7 @@
     if (S.ring !== r) return;
     r.probing = false;
     if (online && !S.call) startCall(r.type, r.target);
+    else if (!online) armRingNotify();
   }
   function stopRingSession() {
     const r = S.ring;
@@ -1842,8 +1948,8 @@
         const unnotified = list.filter(m => !m.notified);
         if (unnotified.length) {
           const p = devById(devId);
-          await sendNtfy(p.topic, `💬 みまもり：${S.name}からメッセージ`, 'タップしてアプリを開くと届きます', 4, '#chat-' + S.deviceId, 'speech_balloon');
-          for (const m of unnotified) { m.notified = true; await dbPut(m); }
+          const ok = await sendNtfyRetry(p.topic, `💬 みまもり：${S.name}からメッセージ`, 'タップしてアプリを開くと届きます', 4, '#chat-' + S.deviceId, 'speech_balloon');
+          if (ok) for (const m of unnotified) { m.notified = true; await dbPut(m); } // 送れなかったら次の機会にもう一度送る
         }
         return;
       }
@@ -1906,7 +2012,14 @@
       b.addEventListener('click', () => sendChat(devId, 'text', t));
       q.appendChild(b);
     }
+    // こどもは専用キーボード、おうちの人は端末のキーボード
+    const kid = S.role === 'kid';
+    $('chatText').classList.toggle('hidden', kid);
+    $('kidCompose').style.display = kid ? 'block' : 'none';
+    $('kidKb').style.display = kid ? 'block' : 'none';
+    if (kid) { S.kb.text = ''; S.kb.tab = 'hira'; S.kb.page = 0; renderKb(); renderCompose(); }
     $('chatView').classList.remove('hidden');
+    fitChatToViewport();
     const list = (await dbByPeer(devId)).filter(m => m.fam === S.rb.familyId && m.me === S.deviceId).sort((a, b) => a.ts - b.ts);
     if (S.chatDev !== devId) return;
     let lastDay = '';
@@ -1927,6 +2040,19 @@
     $('chatList').innerHTML = '';
   }
   $('btnChatBack').addEventListener('click', () => closeChat());
+  // iPhone はキーボードが出ても画面の高さが変わらないため、見えている範囲に合わせてメッセージ画面を縮める
+  function fitChatToViewport() {
+    const vv = window.visualViewport;
+    const cv = $('chatView');
+    if (!vv || cv.classList.contains('hidden')) { cv.style.height = ''; cv.style.top = ''; return; }
+    cv.style.height = vv.height + 'px';
+    cv.style.top = vv.offsetTop + 'px';
+    scrollChat();
+  }
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', fitChatToViewport);
+    window.visualViewport.addEventListener('scroll', fitChatToViewport);
+  }
   function scrollChat() { const l = $('chatList'); l.scrollTop = l.scrollHeight; }
   function appendBubble(m, noScroll) {
     const b = el('div', { class: 'bub ' + (m.dir === 'in' ? 'in' : 'out'), 'data-mid': m.key });
@@ -1948,11 +2074,125 @@
   }
   $('imgViewer').addEventListener('click', () => { $('imgViewer').classList.add('hidden'); $('imgViewerImg').removeAttribute('src'); });
   $('btnChatSend').addEventListener('click', () => {
+    if (!S.chatDev) return;
+    if (S.role === 'kid') { kbSend(); return; }
     const t = $('chatText').value.trim();
-    if (!t || !S.chatDev) return;
+    if (!t) return;
     $('chatText').value = '';
     sendChat(S.chatDev, 'text', t.slice(0, MSG_TEXT_MAX));
   });
+
+  /* =========================================================
+     こども専用キーボード（ひらがな・カタカナ・すうじ・えもじ）
+     ========================================================= */
+  // 50音表：列＝行（あ行・か行…）、上から あ・い・う・え・お の段
+  const KB_COLS = [
+    ['あ','い','う','え','お'], ['か','き','く','け','こ'], ['さ','し','す','せ','そ'], ['た','ち','つ','て','と'], ['な','に','ぬ','ね','の'],
+    ['は','ひ','ふ','へ','ほ'], ['ま','み','む','め','も'], ['や','','ゆ','','よ'], ['ら','り','る','れ','ろ'], ['わ','を','ん','ー','']
+  ];
+  const KB_NUM = ['1','2','3','4','5','6','7','8','9','0','+','-','×','÷','=','(',')','~','♪','★','・','「','」','…','@'];
+  const KB_EMOJI = ['😊','😂','🥰','😢','😡','😴','🤔','😋','👍','👌','🙏','👏','✌️','❤️','⭐','🎉','🍙','🍰','🍜','⚽','🎮','📚','🏠','🏫','🚃'];
+  const DAKU = { 'か':'が','き':'ぎ','く':'ぐ','け':'げ','こ':'ご','さ':'ざ','し':'じ','す':'ず','せ':'ぜ','そ':'ぞ','た':'だ','ち':'ぢ','つ':'づ','て':'で','と':'ど',
+    'は':'ば','ひ':'び','ふ':'ぶ','へ':'べ','ほ':'ぼ','う':'ゔ' };
+  const HANDAKU = { 'は':'ぱ','ひ':'ぴ','ふ':'ぷ','へ':'ぺ','ほ':'ぽ' };
+  const SMALL = { 'あ':'ぁ','い':'ぃ','う':'ぅ','え':'ぇ','お':'ぉ','つ':'っ','や':'ゃ','ゆ':'ゅ','よ':'ょ','わ':'ゎ' };
+  const inv = (o) => Object.fromEntries(Object.entries(o).map(([a, b]) => [b, a]));
+  const DAKU_R = inv(DAKU), HANDAKU_R = inv(HANDAKU), SMALL_R = inv(SMALL);
+  const toKata = (c) => c.replace(/[\u3041-\u3096]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
+  const toHira = (c) => c.replace(/[\u30a1-\u30f6]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
+  const chars = (t) => Array.from(t);
+
+  function renderCompose() {
+    const box = $('kidCompose');
+    box.innerHTML = '';
+    if (!S.kb.text) box.appendChild(el('span', { class: 'ph' }, 'キーボードで かいてね'));
+    else box.appendChild(document.createTextNode(S.kb.text));
+    box.appendChild(el('span', { class: 'caret' }));
+    box.scrollTop = box.scrollHeight;
+    const c = document.getElementById('kbCount');
+    if (c) c.textContent = `${chars(S.kb.text).length} / ${KID_TEXT_MAX}`;
+  }
+  function kbInput(ch) {
+    if (chars(S.kb.text).length >= KID_TEXT_MAX) { toast('これ いじょう かけないよ', 1500); return; }
+    S.kb.text += ch;
+    renderCompose();
+  }
+  // 直前の1文字を、゛ ゜ 小 で変える（もう一度押すと元に戻る）
+  function kbModify(kind) {
+    const arr = chars(S.kb.text);
+    if (!arr.length) return;
+    const last = arr[arr.length - 1];
+    const isKata = /[\u30a1-\u30f6]/.test(last);
+    const h = isKata ? toHira(last) : last;
+    let out = null;
+    if (kind === 'daku') out = DAKU[h] || DAKU[HANDAKU_R[h]] || DAKU_R[h] || null;
+    if (kind === 'handaku') out = HANDAKU[h] || HANDAKU[DAKU_R[h]] || HANDAKU_R[h] || null;
+    if (kind === 'small') out = SMALL[h] || SMALL_R[h] || null;
+    if (!out) return;
+    arr[arr.length - 1] = isKata ? toKata(out) : out;
+    S.kb.text = arr.join('');
+    renderCompose();
+  }
+  function kbDelete() { const a = chars(S.kb.text); a.pop(); S.kb.text = a.join(''); renderCompose(); }
+  function kbSend() {
+    const t = S.kb.text.trim();
+    if (!t || !S.chatDev) return;
+    S.kb.text = '';
+    renderCompose();
+    sendChat(S.chatDev, 'text', t);
+  }
+  function kbKey(label, fn, cls) {
+    const b = el('button', cls ? { class: cls } : {}, label);
+    // 押した瞬間に反応させる（タップの遅れをなくす）
+    b.addEventListener('pointerdown', (e) => { e.preventDefault(); fn(); });
+    return b;
+  }
+  function renderKb() {
+    const kb = $('kidKb');
+    kb.innerHTML = '';
+    const tabs = el('div', { class: 'kbtabs' });
+    for (const [id, label] of [['hira', 'ひらがな'], ['kata', 'カタカナ'], ['num', 'すうじ'], ['emoji', 'えもじ']]) {
+      const b = kbKey(label, () => { S.kb.tab = id; S.kb.page = 0; renderKb(); }, S.kb.tab === id ? 'on' : '');
+      tabs.appendChild(b);
+    }
+    kb.appendChild(tabs);
+    const wide = window.innerWidth >= 600;   // iPad など：50音を1画面、スマホ：2ページに分ける
+    const grid = el('div', { class: 'kbgrid' });
+    if (S.kb.tab === 'hira' || S.kb.tab === 'kata') {
+      const cols = wide ? KB_COLS : KB_COLS.slice(S.kb.page * 5, S.kb.page * 5 + 5);
+      grid.style.gridTemplateColumns = `repeat(${cols.length}, 1fr)`;
+      for (let row = 0; row < 5; row++) {
+        for (const col of cols) {
+          const c = col[row];
+          if (!c) { grid.appendChild(el('button', { class: 'blank' }, '')); continue; }
+          const ch = S.kb.tab === 'kata' ? toKata(c) : c;
+          grid.appendChild(kbKey(ch, () => kbInput(ch)));
+        }
+      }
+    } else {
+      const list = S.kb.tab === 'num' ? KB_NUM : KB_EMOJI;
+      grid.style.gridTemplateColumns = 'repeat(5, 1fr)';
+      for (const c of list) grid.appendChild(kbKey(c, () => kbInput(c)));
+    }
+    kb.appendChild(grid);
+    const fn = el('div', { class: 'kbfn' });
+    const kana = S.kb.tab === 'hira' || S.kb.tab === 'kata';
+    fn.appendChild(kana ? kbKey('゛', () => kbModify('daku')) : kbKey('、', () => kbInput('、')));
+    fn.appendChild(kana ? kbKey('゜', () => kbModify('handaku')) : kbKey('。', () => kbInput('。')));
+    fn.appendChild(kana ? kbKey('小', () => kbModify('small')) : kbKey('！', () => kbInput('！')));
+    fn.appendChild(kana ? kbKey('、', () => kbInput('、')) : kbKey('？', () => kbInput('？')));
+    fn.appendChild(kana ? kbKey('。', () => kbInput('。')) : kbKey('ー', () => kbInput('ー')));
+    fn.appendChild(kana ? kbKey('！', () => kbInput('！')) : kbKey('〜', () => kbInput('〜')));
+    fn.appendChild(kana ? kbKey('？', () => kbInput('？')) : kbKey('〇', () => kbInput('〇')));
+    if (kana && !wide) fn.appendChild(kbKey(S.kb.page === 0 ? 'は→' : '←あ', () => { S.kb.page = S.kb.page ? 0 : 1; renderKb(); }, 'page'));
+    else fn.appendChild(kbKey('␣', () => kbInput('　'), 'page'));
+    fn.appendChild(kbKey('⌫', kbDelete, 'del'));
+    kb.appendChild(fn);
+    const cnt = el('div', { class: 'kbcount', id: 'kbCount' });
+    kb.appendChild(cnt);
+    renderCompose();
+  }
+  window.addEventListener('resize', () => { if (S.role === 'kid' && S.chatDev) renderKb(); });
   $('chatText').addEventListener('input', () => { const a = $('chatText'); a.style.height = 'auto'; a.style.height = Math.min(120, a.scrollHeight) + 'px'; });
   $('btnChatPhoto').addEventListener('click', () => { $('chatFile').value = ''; $('chatFile').click(); });
   $('chatFile').addEventListener('change', async () => {
@@ -1986,7 +2226,25 @@
   /* =========================================================
      PeerJS 接続
      ========================================================= */
+  // 同じ端末で2つの画面（タブ）が開かれたら、新しい方を優先して古い方は止める
+  let bc = null;
+  try {
+    bc = new BroadcastChannel('mimamori-v3');
+    bc.onmessage = (ev) => {
+      const d = ev.data || {};
+      if (d.t === 'takeover' && d.tab !== TAB_ID && S.peer && !S.stale) {
+        S.stale = true;
+        shutdownPeer();
+        releaseWakeLock();
+        $('staleView').classList.remove('hidden');
+      }
+    };
+  } catch (e) { bc = null; }
+  $('btnStaleReload').addEventListener('click', () => { location.reload(); });
+
   function startPeer() {
+    if (S.stale) return;
+    try { bc && bc.postMessage({ t: 'takeover', tab: TAB_ID }); } catch (e) {}
     if (S.peer) { try { S.peer.destroy(); } catch (e) {} }
     setSelf('wait', '接続しています…');
     S.myPeerId = peerIdOf(S.deviceId);
@@ -2027,6 +2285,7 @@
       if (type === 'peer-unavailable') {
         const m = String(err.message || '').match(/mmr3-[0-9a-f]+-([A-Z2-9]+)/);
         if (m && devById(m[1])) setOnline(m[1], false);
+        if (S.ring && m && m[1] === S.ring.target) armRingNotify();
         if (S.call && !S.verified && m && m[1] === S.callDev) {
           endCall(`「${nameOf(S.callDev)}」はオフラインです`, true);
         }
@@ -2210,7 +2469,8 @@
   /* =========================================================
      発信
      ========================================================= */
-  async function startCall(type, devId) {
+  async function startCall(type, devId, opts) {
+    opts = opts || {};
     if (S.call || S.incoming) return;
     const target = devById(devId);
     if (!target || target.role === S.role) return;
@@ -2238,7 +2498,8 @@
     stopPresence();
 
     if (!S.ring) {
-      $('dlTitle').textContent = type === 'watch' ? `「${target.name}」の見守りを開始しています…` : `「${target.name}」を呼び出しています…`;
+      $('dlTitle').textContent = type === 'watch' ? `「${target.name}」の見守りを開始しています…`
+        : opts.callback ? `「${target.name}」に折り返しています…` : `「${target.name}」を呼び出しています…`;
       $('dlSub').textContent = '';
       $('dialingView').classList.remove('hidden');
       if (type === 'call') startRing('back');
@@ -2265,7 +2526,13 @@
     sendMsg(devId, { t: 'auth-offer', n, ts, type, fp, tag });
   }
 
-  $('btnCancelDial').addEventListener('click', () => { stopRingSession(); endCall('', true); });
+  $('btnCancelDial').addEventListener('click', () => {
+    clearTimeout(S.cbWaitTimer);
+    S.callbackDev = null;
+    stopRingSession();
+    endCall('', true);
+    if (S.role === 'parent') renderHome();
+  });
 
   function onVerified() {
     stopRingSession();
@@ -2420,6 +2687,7 @@
     }
     stopRingSession();
     stopRing();
+    clearTimeout(S.cbWaitTimer);
     $('dialingView').classList.add('hidden');
     S.call = call; S.callType = type; S.callDev = from; S.callNonce = n; S.callOfferFp = offerFp;
     S.wantMic = true; S.wantVideo = true;
@@ -2678,7 +2946,11 @@
     $('btnInstall').classList.add('hidden');
     toast('ホーム画面に追加しました。次からはアイコンから開けます');
   });
-  if (window.navigator.standalone === true) $('iosStandaloneNote').classList.remove('hidden');
+  (function () {
+    const ua = navigator.userAgent;
+    const isIOS = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    if (isIOS && window.navigator.standalone !== true) $('iosSafariTip').classList.remove('hidden');
+  })();
 
   boot();
 })();
